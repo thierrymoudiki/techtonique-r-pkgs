@@ -42,4 +42,39 @@ jobs:
       - name: Move Packages to Repository
         run: |
           mkdir -p packages
-          mv *.tar.gz *.zip *.tgz packages/ 2>/dev/null || true          
+          mv *.tar.gz *.zip *.tgz packages/ 2>/dev/null || true
+
+      - name: Test Package Installation
+        run: |
+          Rscript -e '
+          # Set repository to local packages directory
+          pkgs <- jsonlite::fromJSON("packages.json")$package
+          
+          # Try to install each package from local files
+          results <- lapply(pkgs, function(pkg) {
+            pkg_file <- list.files("packages", pattern = paste0(pkg, "_.*\\.(tar\\.gz|zip|tgz)$"), full.names = TRUE)[1]
+            if(is.na(pkg_file)) {
+              return(sprintf("Package file not found for %s", pkg))
+            }
+            
+            tryCatch({
+              install.packages(pkg_file, repos = NULL, type = "source")
+              sprintf("Successfully installed %s", pkg)
+            }, error = function(e) {
+              sprintf("Failed to install %s: %s", pkg, e$message)
+            })
+          })
+          
+          # Print results
+          cat(unlist(results), sep = "\n")
+          
+          # Check if any installations failed
+          if(any(grepl("Failed|not found", unlist(results)))) {
+            quit(status = 1)
+          }
+          '
+
+      - name: Update packages.json
+        run: |
+          # Your existing packages.json update script
+          
