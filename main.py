@@ -1,5 +1,7 @@
 import json
+import os 
 import sqlite3
+import uvicorn 
 from datetime import datetime
 from pathlib import Path
 
@@ -106,3 +108,12 @@ async def download_package(package_name: str):
     if not package_path.exists():
         raise HTTPException(status_code=404, detail="Package not found")
     return FileResponse(package_path)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    is_heroku = "PORT" in os.environ
+
+    if is_heroku:
+        uvicorn.run("main:app", host="0.0.0.0", port=port)  # Use app instead of cors_app
+    else:
+        uvicorn.run("main:app", host="0.0.0.0", port=8000)  # Use app instead of cors_app
