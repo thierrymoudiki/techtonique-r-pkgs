@@ -34,7 +34,7 @@ jobs:
           R CMD build --binary .
 
       - name: Upload Package Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: r-packages
           path: "*.tar.gz, *.zip, *.tgz"
