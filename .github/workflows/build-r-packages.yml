@@ -78,3 +78,51 @@ jobs:
         run: |
           # Your existing packages.json update script
           
+      - name: Create Repository Structure
+        run: |
+          Rscript -e '
+            # Create repository structure
+            repo_path <- "packages"
+            dir.create(file.path(repo_path, "src", "contrib"), recursive = TRUE)
+            
+            # Move source packages to src/contrib
+            source_files <- list.files(".", pattern = "\\.tar\\.gz$")
+            file.copy(source_files, file.path(repo_path, "src", "contrib"), overwrite = TRUE)
+            
+            # Create PACKAGES files
+            tools::write_PACKAGES(file.path(repo_path, "src", "contrib"), type = "source")
+            
+            # For binary packages (Windows)
+            if (file.exists("*.zip")) {
+              win_path <- file.path(repo_path, "bin", "windows", "contrib", R.Version()$major)
+              dir.create(win_path, recursive = TRUE)
+              win_files <- list.files(".", pattern = "\\.zip$")
+              file.copy(win_files, win_path, overwrite = TRUE)
+              tools::write_PACKAGES(win_path, type = "win.binary")
+            }
+            
+            # For binary packages (Mac)
+            if (file.exists("*.tgz")) {
+              mac_path <- file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major)
+              dir.create(mac_path, recursive = TRUE)
+              mac_files <- list.files(".", pattern = "\\.tgz$")
+              file.copy(mac_files, mac_path, overwrite = TRUE)
+              tools::write_PACKAGES(mac_path, type = "mac.binary")
+            }
+          '
+
+      - name: Test Repository
+        run: |
+          Rscript -e '
+            # Add local repository to repos
+            local_repo <- paste0("file:", getwd(), "/packages")
+            repos <- c(local = local_repo, CRAN = "https://cloud.r-project.org")
+            
+            # List available packages
+            available_pkgs <- available.packages(contrib.url(local_repo))
+            print(available_pkgs)
+            
+            # Try installing from local repo
+            install.packages(rownames(available_pkgs), repos = repos)
+          '
+          

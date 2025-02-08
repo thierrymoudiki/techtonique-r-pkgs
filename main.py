@@ -103,11 +103,19 @@ async def get_download_stats():
 
 @app.get("/download/{package_name}")
 async def download_package(package_name: str):
-    """Serve the actual package files"""
+    """Legacy endpoint for direct package downloads"""
     package_path = PACKAGE_DIR / package_name
     if not package_path.exists():
         raise HTTPException(status_code=404, detail="Package not found")
     return FileResponse(package_path)
+
+@app.get("/packages/{file_path:path}")
+async def serve_package(file_path: str):
+    """CRAN-like repository structure endpoint"""
+    full_path = PACKAGE_DIR / file_path
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail="Package file not found")
+    return FileResponse(full_path)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
