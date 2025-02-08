@@ -20,10 +20,6 @@
         "url": "https://github.com/Techtonique/learningmachine"
     },
     {
-        "package": "forecastingapi",
-        "url": "https://github.com/Techtonique/forecastingAPI_r"
-    },
-    {
         "package": "simulatetimeseries",
         "url": "https://github.com/thierrymoudiki/simulatetimeseries"
     },
