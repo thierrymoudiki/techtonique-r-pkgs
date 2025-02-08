@@ -23,14 +23,13 @@ jobs:
       - name: Clone R Packages
         run: |
           # Read packages.json and clone repositories
-          python3 -c '
-import json
-with open("packages.json") as f:
-    packages = json.load(f)
-for pkg in packages:
-    print(f"Cloning {pkg["package"]}...")
-    !git clone {pkg["url"]}.git
-'
+          python3 -c 'import json
+          with open("packages.json") as f:
+              packages = json.load(f)
+          for pkg in packages:
+              print(f"Cloning {pkg["package"]}...")
+              !git clone {pkg["url"]}.git
+          '
         shell: bash
 
       - name: Install dependencies
