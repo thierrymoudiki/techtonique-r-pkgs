@@ -84,7 +84,7 @@ jobs:
           mkdir -p packages
           mv *.tar.gz *.zip *.tgz packages/ 2>/dev/null || true
 
-      - name: Test Package Installation
+      - name: Install R packages
         run: |
           Rscript -e '
           # Set repository to local packages directory
@@ -113,6 +113,12 @@ jobs:
             quit(status = 1)
           }
           '
+        shell: /bin/bash -e {0}
+        env:
+          R_LIBS_USER: /Users/runner/work/_temp/Library
+          TZ: UTC
+          _R_CHECK_SYSTEM_CLOCK_: FALSE
+          NOT_CRAN: true
 
       - name: Update packages.json
         run: |
