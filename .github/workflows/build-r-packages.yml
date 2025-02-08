@@ -22,19 +22,12 @@ jobs:
 
       - name: Clone R Packages
         run: |
-          # Read packages.json and clone repositories
-          python3 -c 'import json
-          with open("packages.json") as f:
-              packages = json.load(f)
-          for pkg in packages:
-              print(f"Cloning {pkg["package"]}...")
-              !git clone {pkg["url"]}.git
-          '
+          python3 -c 'import json,subprocess,os; [subprocess.run(["git", "clone", pkg["url"]], check=True) for pkg in json.load(open("packages.json"))]'
         shell: bash
 
       - name: Install dependencies
         run: |
-          install.packages(c("devtools", "remotes", "jsonlite"), dependencies = TRUE)
+          install.packages(c("devtools", "remotes", "jsonlite"))
         shell: Rscript {0}
 
       - name: Build Packages
