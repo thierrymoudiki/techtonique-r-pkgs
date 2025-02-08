@@ -96,7 +96,7 @@ jobs:
           
           # Try to install each package from local files
           results <- lapply(pkgs, function(pkg) {
-            pkg_file <- list.files("packages", pattern = paste0(pkg, "_.*\\.(tar\\.gz|zip|tgz)$"), full.names = TRUE)[1]
+            pkg_file <- list.files("packages", pattern = paste0(pkg, "_.*\\\.(tar\\\\.gz|zip|tgz)$"), full.names = TRUE)[1]
             if(is.na(pkg_file)) {
               return(sprintf("Package file not found for %s", pkg))
             }
