@@ -58,7 +58,7 @@ jobs:
             }
             
             tryCatch({
-              install.packages(pkg_file, repos = NULL, type = "source")
+              install.packages(pkg_file, repos = NULL, type = "source", dependencies = TRUE)
               sprintf("Successfully installed %s", pkg)
             }, error = function(e) {
               sprintf("Failed to install %s: %s", pkg, e$message)
