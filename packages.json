@@ -20,14 +20,6 @@
         "url": "https://github.com/Techtonique/learningmachine"
     },
     {
-        "package": "nnetsauce",
-        "url": "https://github.com/Techtonique/nnetsauce_r"
-    },
-    {
-        "package": "mlsauce",
-        "url": "https://github.com/Techtonique/mlsauce_r"
-    },
-    {
         "package": "forecastingapi",
         "url": "https://github.com/Techtonique/forecastingAPI_r"
     },
@@ -42,9 +34,5 @@
     {
         "package": "misc",
         "url": "https://github.com/thierrymoudiki/misc"
-    },
-    {
-        "package": "tisthemachinelearner", 
-        "url": "https://github.com/Techtonique/tisthemachinelearner_r"
     }
 ]
