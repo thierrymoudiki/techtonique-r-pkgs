@@ -7,31 +7,73 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        r-version: ['4.2.0']
+    runs-on: ${{ matrix.os }}
+    
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Setup R
-        uses: r-lib/actions/setup-r@v2
+      - uses: actions/checkout@v3
+      
+      - uses: r-lib/actions/setup-r@v2
         with:
-          r-version: '4.2.0'
+          r-version: ${{ matrix.r-version }}
 
-      - name: Install Dependencies
-        run: Rscript -e "install.packages(c('devtools', 'remotes'), dependencies=TRUE)"
-
-      - name: Build R Package (Linux/Mac)
-        if: matrix.os != 'windows-latest'
+      - name: Debug Information
         run: |
-          R CMD build .
+          echo "Current directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Find DESCRIPTION files:"
+          find . -name "DESCRIPTION"
+        shell: bash
 
-      - name: Build R Package (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Install dependencies
         run: |
-          R CMD build --binary .
+          Rscript -e '
+            install.packages(c("devtools", "remotes"), dependencies = TRUE)
+          '
+
+      - name: Build package
+        run: |
+          # Different commands for different OS
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            R CMD build .
+            R CMD INSTALL --build .
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            R CMD build .
+            R CMD INSTALL --build .
+          else
+            R CMD build .
+          fi
+        shell: bash
+
+      - name: Create Repository Structure
+        run: |
+          Rscript -e '
+            repo_path <- "packages"
+            
+            # Create directories
+            dir.create(file.path(repo_path, "src", "contrib"), recursive = TRUE)
+            dir.create(file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), recursive = TRUE)
+            dir.create(file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), recursive = TRUE)
+            
+            # Move files to appropriate directories
+            src_files <- list.files(".", pattern = "\\.tar\\.gz$")
+            win_files <- list.files(".", pattern = "\\.zip$")
+            mac_files <- list.files(".", pattern = "\\.tgz$")
+            
+            if(length(src_files) > 0) file.copy(src_files, file.path(repo_path, "src", "contrib"), overwrite = TRUE)
+            if(length(win_files) > 0) file.copy(win_files, file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), overwrite = TRUE)
+            if(length(mac_files) > 0) file.copy(mac_files, file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), overwrite = TRUE)
+            
+            # Create PACKAGES files
+            tools::write_PACKAGES(file.path(repo_path, "src", "contrib"), type = "source")
+            if(length(win_files) > 0) tools::write_PACKAGES(file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), type = "win.binary")
+            if(length(mac_files) > 0) tools::write_PACKAGES(file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), type = "mac.binary")
+          '
 
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v4
@@ -78,39 +120,6 @@ jobs:
         run: |
           # Your existing packages.json update script
           
-      - name: Create Repository Structure
-        run: |
-          Rscript -e '
-            # Create repository structure
-            repo_path <- "packages"
-            dir.create(file.path(repo_path, "src", "contrib"), recursive = TRUE)
-            
-            # Move source packages to src/contrib
-            source_files <- list.files(".", pattern = "\\.tar\\.gz$")
-            file.copy(source_files, file.path(repo_path, "src", "contrib"), overwrite = TRUE)
-            
-            # Create PACKAGES files
-            tools::write_PACKAGES(file.path(repo_path, "src", "contrib"), type = "source")
-            
-            # For binary packages (Windows)
-            if (file.exists("*.zip")) {
-              win_path <- file.path(repo_path, "bin", "windows", "contrib", R.Version()$major)
-              dir.create(win_path, recursive = TRUE)
-              win_files <- list.files(".", pattern = "\\.zip$")
-              file.copy(win_files, win_path, overwrite = TRUE)
-              tools::write_PACKAGES(win_path, type = "win.binary")
-            }
-            
-            # For binary packages (Mac)
-            if (file.exists("*.tgz")) {
-              mac_path <- file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major)
-              dir.create(mac_path, recursive = TRUE)
-              mac_files <- list.files(".", pattern = "\\.tgz$")
-              file.copy(mac_files, mac_path, overwrite = TRUE)
-              tools::write_PACKAGES(mac_path, type = "mac.binary")
-            }
-          '
-
       - name: Test Repository
         run: |
           Rscript -e '
@@ -123,6 +132,6 @@ jobs:
             print(available_pkgs)
             
             # Try installing from local repo
-            install.packages(rownames(available_pkgs), repos = repos)
+            install.packages(rownames(available_pkgs), repos = repos, dependencies = TRUE)
           '
           
