@@ -20,60 +20,56 @@ jobs:
         with:
           r-version: ${{ matrix.r-version }}
 
-      - name: Debug Information
+      - uses: r-lib/actions/setup-rtools@v2
+        if: matrix.os == 'windows-latest'
+
+      - name: Query dependencies
         run: |
-          echo "Current directory:"
-          pwd
-          echo "Directory contents:"
-          ls -la
-          echo "Find DESCRIPTION files:"
-          find . -name "DESCRIPTION"
-        shell: bash
+          install.packages('remotes', dependencies = TRUE)
+          saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds")
+          writeLines(sprintf("R-%i.%i", getRversion()$major, getRversion()$minor), ".github/R-version")
+        shell: Rscript {0}
 
       - name: Install dependencies
         run: |
-          Rscript -e '
-            install.packages(c("devtools", "remotes"), dependencies = TRUE)
-          '
+          remotes::install_deps(dependencies = TRUE)
+          install.packages(c("devtools", "remotes"), dependencies = TRUE)
+        shell: Rscript {0}
 
       - name: Build package
         run: |
-          # Different commands for different OS
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            R CMD build .
-            R CMD INSTALL --build .
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            R CMD build .
-            R CMD INSTALL --build .
-          else
-            R CMD build .
-          fi
-        shell: bash
+          if ("${{ matrix.os }}" == "windows-latest") {
+            shell("R CMD build .")
+            shell("R CMD INSTALL --build .")
+          } else {
+            system("R CMD build .")
+            system("R CMD INSTALL --build .")
+          }
+        shell: Rscript {0}
 
       - name: Create Repository Structure
         run: |
-          Rscript -e '
-            repo_path <- "packages"
-            
-            # Create directories
-            dir.create(file.path(repo_path, "src", "contrib"), recursive = TRUE)
-            dir.create(file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), recursive = TRUE)
-            dir.create(file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), recursive = TRUE)
-            
-            # Move files to appropriate directories
-            src_files <- list.files(".", pattern = "\\.tar\\.gz$")
-            win_files <- list.files(".", pattern = "\\.zip$")
-            mac_files <- list.files(".", pattern = "\\.tgz$")
-            
-            if(length(src_files) > 0) file.copy(src_files, file.path(repo_path, "src", "contrib"), overwrite = TRUE)
-            if(length(win_files) > 0) file.copy(win_files, file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), overwrite = TRUE)
-            if(length(mac_files) > 0) file.copy(mac_files, file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), overwrite = TRUE)
-            
-            # Create PACKAGES files
-            tools::write_PACKAGES(file.path(repo_path, "src", "contrib"), type = "source")
-            if(length(win_files) > 0) tools::write_PACKAGES(file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), type = "win.binary")
-            if(length(mac_files) > 0) tools::write_PACKAGES(file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), type = "mac.binary")
-          '
+          repo_path <- "packages"
+          
+          # Create directories
+          dir.create(file.path(repo_path, "src", "contrib"), recursive = TRUE)
+          dir.create(file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), recursive = TRUE)
+          dir.create(file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), recursive = TRUE)
+          
+          # Move files to appropriate directories
+          src_files <- list.files(".", pattern = "\\.tar\\.gz$")
+          win_files <- list.files(".", pattern = "\\.zip$")
+          mac_files <- list.files(".", pattern = "\\.tgz$")
+          
+          if(length(src_files) > 0) file.copy(src_files, file.path(repo_path, "src", "contrib"), overwrite = TRUE)
+          if(length(win_files) > 0) file.copy(win_files, file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), overwrite = TRUE)
+          if(length(mac_files) > 0) file.copy(mac_files, file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), overwrite = TRUE)
+          
+          # Create PACKAGES files
+          tools::write_PACKAGES(file.path(repo_path, "src", "contrib"), type = "source")
+          if(length(win_files) > 0) tools::write_PACKAGES(file.path(repo_path, "bin", "windows", "contrib", R.Version()$major), type = "win.binary")
+          if(length(mac_files) > 0) tools::write_PACKAGES(file.path(repo_path, "bin", "macosx", "contrib", R.Version()$major), type = "mac.binary")
+        shell: Rscript {0}
 
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v4
