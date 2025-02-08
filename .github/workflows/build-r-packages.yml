@@ -96,13 +96,11 @@ jobs:
           
           # Try to install each package from local files
           results <- lapply(pkgs, function(pkg) {
-            pkg_file <- list.files("packages", pattern = paste0(pkg, "_.*\\\.(tar\\\\.gz|zip|tgz)$"), full.names = TRUE)[1]
-            if(is.na(pkg_file)) {
-              return(sprintf("Package file not found for %s", pkg))
-            }
-            
             tryCatch({
-              install.packages(pkg_file, repos = NULL, type = "source", dependencies = TRUE)
+              # Extract repo path from URL in packages.json
+              pkg_data <- jsonlite::fromJSON("packages.json")
+              repo_path <- sub("https://github.com/", "", pkg_data$url[pkg_data$package == pkg])
+              remotes::install_github(repo_path, dependencies = TRUE)
               sprintf("Successfully installed %s", pkg)
             }, error = function(e) {
               sprintf("Failed to install %s: %s", pkg, e$message)
