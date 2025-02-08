@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          install.packages(c("devtools", "remotes", "jsonlite"))
+          install.packages(c("devtools", "remotes", "jsonlite", "foreach", "doSNOW", "snow"))
         shell: Rscript {0}
 
       - name: Build Packages
