@@ -1,9 +1,165 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Welcome to the R Package Repository</h1>
-<p>This is a simple repository for R packages.</p>
+<h1>
+    Techtonique R Packages Repository
+</h1>
 <p>
     <a href="/PACKAGES">View Packages</a>
 </p>
+
+<div class="packages-container">
+    <h2>Available Packages</h2>
+    <div class="packages-list">
+        {% for pkg in packages %}
+        <div class="package-item">
+            <div class="package-info">
+                <span class="package-name">{{ pkg.package }}</span>
+                {% if pkg.downloads %}
+                <span class="download-count" title="Total downloads">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    {{ pkg.downloads }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="package-links">
+                <span class="package-url">
+                    <a href="{{ pkg.source_path }}" target="_blank" rel="noopener noreferrer">Source</a>
+                </span>
+                {% if pkg.build_exists %}
+                <div class="platform-downloads">
+                    <select class="platform-select" onchange="updateDownloadLink(this, '{{ pkg.url.split('/')[-1] }}', '{{ pkg.version }}')">
+                        <option value="source">Source Package</option>
+                        <option value="windows">Windows Binary</option>
+                        <option value="macos">macOS Binary</option>
+                    </select>
+                    <a href="/download/{{ pkg.url.split('/')[-1] }}?version={{ pkg.version }}" class="download-link">
+                        Download
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function updateDownloadLink(select, package, version) {
+    const platform = select.value;
+    const downloadLink = select.parentElement.querySelector('.download-link');
+    downloadLink.href = `/download/${package}?version=${version}&platform=${platform}`;
+}
+</script>
+
+<style>
+    .packages-container h2 {
+        margin-bottom: 2rem;
+        color: var(--accent-color);
+    }
+
+    .package-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .package-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .package-name {
+        font-weight: bold;
+        color: var(--text-color);
+    }
+
+    .package-links {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .platform-downloads {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .platform-select {
+        padding: 0.4rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    .package-url a {
+        color: var(--accent-color);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .package-url a:hover {
+        color: var(--text-color);
+        text-decoration: underline;
+    }
+
+    .download-link {
+        background-color: var(--accent-color);
+        color: var(--bg-color) !important;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .download-link:hover {
+        opacity: 0.9;
+        text-decoration: none !important;
+    }
+
+    .download-count {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        color: var(--text-color-light);
+        font-size: 0.9rem;
+    }
+
+    .download-count svg {
+        opacity: 0.7;
+    }
+
+    @media (max-width: 768px) {
+        .package-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .package-links {
+            width: 100%;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .platform-downloads {
+            width: 100%;
+        }
+
+        .platform-select {
+            flex: 1;
+        }
+    }
+</style>
+
 {% endblock %}
