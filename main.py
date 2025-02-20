@@ -244,6 +244,36 @@ async def serve_package(
         print(f"Error serving package: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/r-packages/src/contrib/PACKAGES")
+@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES")
+@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES")
+async def serve_packages_file(request: Request, r_version: str = None):
+    try:
+        # Determine which PACKAGES file to serve based on the URL
+        if "windows" in str(request.url):
+            file_path = f"r-packages/bin/windows/contrib/{r_version}/PACKAGES"
+        elif "macosx" in str(request.url):
+            file_path = f"r-packages/bin/macosx/contrib/{r_version}/PACKAGES"
+        else:
+            file_path = "r-packages/src/contrib/PACKAGES"
+
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=404, 
+                detail=f"PACKAGES file not found: {file_path}"
+            )
+
+        # Serve the file
+        return FileResponse(
+            file_path,
+            media_type="text/plain"
+        )
+        
+    except Exception as e:
+        print(f"Error serving PACKAGES file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     host = os.environ.get("HOST", "0.0.0.0")
