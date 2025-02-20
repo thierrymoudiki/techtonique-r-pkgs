@@ -58,14 +58,17 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
 @app.get("/download/{package}")
 async def download_package(
     package: str, 
-    version: str, 
-    platform: str = "source",
+    version: str = Query(..., description="R package version"),
+    platform: str = Query(default="source", description="Platform (windows/macos/source)"),
     db: Session = Depends(get_db)
 ):
     try:
         today = date.today()
         
-        # Get or create download record - using get() with synchronize_session
+        # Log the incoming request (temporary, for debugging)
+        print(f"Download request: package={package}, version={version}, platform={platform}")
+        
+        # Get or create download record
         download = db.query(Download).filter(
             Download.package == package,
             Download.date == today,
@@ -100,9 +103,13 @@ async def download_package(
         else:  # source
             package_url = f"{base_url}/src/contrib/{package}_{version}.tar.gz"
         
+        # Log the redirect URL (temporary, for debugging)
+        print(f"Redirecting to: {package_url}")
+        
         return RedirectResponse(url=package_url)
         
     except Exception as e:
+        print(f"Error in download_package: {str(e)}")  # Log the error
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/stats/{date}/{package}")
