@@ -60,12 +60,13 @@ async def download_package(
     package: str, 
     version: str = Query(..., description="R package version"),
     platform: str = Query(default="source", description="Platform (windows/macos/source)"),
+    r_version: str = Query(default="4.3", description="R version (e.g. 4.3)"),
     db: Session = Depends(get_db)
 ):
     try:
         today = date.today()
         
-        # Log the incoming request (temporary, for debugging)
+        # Log the incoming request
         print(f"Download request: package={package}, version={version}, platform={platform}")
         
         # Get or create download record
@@ -97,19 +98,19 @@ async def download_package(
         # Construct package URL based on platform
         base_url = "https://techtonique.github.io/r-packages"
         if platform == "windows":
-            package_url = f"{base_url}/bin/windows/contrib/{version}/{package}_{version}.zip"
+            package_url = f"{base_url}/bin/windows/contrib/{r_version}/{package}_{version}.zip"
         elif platform == "macos":
-            package_url = f"{base_url}/bin/macosx/contrib/{version}/{package}_{version}.tgz"
+            package_url = f"{base_url}/bin/macosx/contrib/{package}_{version}.tgz"
         else:  # source
             package_url = f"{base_url}/src/contrib/{package}_{version}.tar.gz"
         
-        # Log the redirect URL (temporary, for debugging)
+        # Log the redirect URL
         print(f"Redirecting to: {package_url}")
         
         return RedirectResponse(url=package_url)
         
     except Exception as e:
-        print(f"Error in download_package: {str(e)}")  # Log the error
+        print(f"Error in download_package: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/stats/{date}/{package}")
