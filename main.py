@@ -5,7 +5,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from fastapi import FastAPI, File, Request, Query, HTTPException, Depends
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
 from sqlalchemy import create_engine, Column, Integer, String, Date, desc
@@ -25,9 +25,19 @@ try:
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base = declarative_base()
-    Base.metadata.create_all(bind=engine)
 except Exception as e:
     raise RuntimeError(f"Failed to connect to database: {str(e)}")
+
+class Download(Base):
+    __tablename__ = "downloads"
+    id = Column(Integer, primary_key=True)         # 4 bytes
+    package = Column(String)                       # variable
+    date = Column(Date)                           # 4 bytes
+    count = Column(Integer)                       # 4 bytes
+    platform = Column(String)                     # variable
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 # Dependency
 def get_db():
@@ -158,13 +168,81 @@ async def get_today_stats(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class Download(Base):
-    __tablename__ = "downloads"
-    id = Column(Integer, primary_key=True)         # 4 bytes
-    package = Column(String)                       # variable
-    date = Column(Date)                           # 4 bytes
-    count = Column(Integer)                       # 4 bytes
-    platform = Column(String)                     # variable
+@app.get("/r-packages/src/contrib/{file_name}")
+@app.get("/r-packages/bin/windows/contrib/{r_version}/{file_name}")
+@app.get("/r-packages/bin/macosx/contrib/{r_version}/{file_name}")
+async def serve_package(
+    request: Request,  # Add request parameter
+    file_name: str,
+    r_version: str = None,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Parse package name and version from file_name
+        parts = file_name.rsplit("_", 1)
+        if len(parts) != 2:
+            raise HTTPException(status_code=400, detail="Invalid file name format")
+        
+        package = parts[0]
+        version = parts[1].split(".")[0]  # Get version before file extension
+        
+        # Determine platform from path
+        if "windows" in str(request.url):
+            platform = "windows"
+            file_path = f"r-packages/bin/windows/contrib/{r_version}/{file_name}"
+        elif "macosx" in str(request.url):
+            platform = "macos"
+            file_path = f"r-packages/bin/macosx/contrib/{r_version}/{file_name}"
+        else:
+            platform = "source"
+            file_path = f"r-packages/src/contrib/{file_name}"
+
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Package file not found: {file_path}"
+            )
+
+        # Record the download
+        today = date.today()
+        download = db.query(Download).filter(
+            Download.package == package,
+            Download.date == today,
+            Download.platform == platform
+        ).first()
+        
+        if not download:
+            download = Download(
+                package=package,
+                date=today,
+                count=1,
+                platform=platform
+            )
+            db.add(download)
+        else:
+            db.query(Download).filter(
+                Download.id == download.id
+            ).update(
+                {"count": Download.count + 1},
+                synchronize_session=False
+            )
+        
+        db.commit()
+        
+        # Log the download
+        print(f"Package download: {package} {version} for {platform}")
+        
+        # Serve the file
+        return FileResponse(
+            file_path,
+            filename=file_name,
+            media_type="application/octet-stream"
+        )
+        
+    except Exception as e:
+        print(f"Error serving package: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
