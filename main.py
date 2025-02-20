@@ -172,12 +172,16 @@ async def get_today_stats(db: Session = Depends(get_db)):
 @app.get("/r-packages/bin/windows/contrib/{r_version}/{file_name}")
 @app.get("/r-packages/bin/macosx/contrib/{r_version}/{file_name}")
 async def serve_package(
-    request: Request,  # Add request parameter
+    request: Request,
     file_name: str,
     r_version: str = None,
     db: Session = Depends(get_db)
 ):
     try:
+        # Skip if requesting PACKAGES files
+        if file_name in ["PACKAGES", "PACKAGES.gz", "PACKAGES.rds"]:
+            raise HTTPException(status_code=404, detail="Use PACKAGES endpoint")
+            
         # Parse package name and version from file_name
         parts = file_name.rsplit("_", 1)
         if len(parts) != 2:
@@ -245,18 +249,20 @@ async def serve_package(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/r-packages/src/contrib/PACKAGES")
+@app.get("/r-packages/src/contrib/PACKAGES.gz")
+@app.get("/r-packages/src/contrib/PACKAGES.rds")
 @app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES")
+@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.gz")
+@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.rds")
 @app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES")
+@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.gz")
+@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.rds")
 async def serve_packages_file(request: Request, r_version: str = None):
     try:
-        # Determine which PACKAGES file to serve based on the URL
-        if "windows" in str(request.url):
-            file_path = f"r-packages/bin/windows/contrib/{r_version}/PACKAGES"
-        elif "macosx" in str(request.url):
-            file_path = f"r-packages/bin/macosx/contrib/{r_version}/PACKAGES"
-        else:  # source
-            file_path = "r-packages/src/contrib/PACKAGES"
-
+        # Get the full path from the request URL
+        url_path = request.url.path
+        file_path = url_path.lstrip('/')  # Remove leading slash
+        
         # Debug logging
         print(f"Attempting to serve PACKAGES file from: {file_path}")
         print(f"Current working directory: {os.getcwd()}")
@@ -271,11 +277,18 @@ async def serve_packages_file(request: Request, r_version: str = None):
                 detail=f"PACKAGES file not found at: {file_path}. Working directory: {os.getcwd()}"
             )
 
+        # Determine media type
+        if file_path.endswith('.gz'):
+            media_type = 'application/gzip'
+        elif file_path.endswith('.rds'):
+            media_type = 'application/octet-stream'
+        else:
+            media_type = 'text/plain'
+
         # Serve the file
         return FileResponse(
             file_path,
-            media_type="text/plain",
-            filename="PACKAGES"  # Explicitly set filename
+            media_type=media_type
         )
         
     except Exception as e:
