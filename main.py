@@ -257,22 +257,33 @@ async def serve_packages_file(request: Request, r_version: str = None):
         else:
             file_path = "r-packages/src/contrib/PACKAGES"
 
+        # Debug logging
+        print(f"Attempting to serve PACKAGES file from: {file_path}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Directory contents: {os.listdir('.')}")
+        if os.path.exists('r-packages'):
+            print(f"r-packages contents: {os.listdir('r-packages')}")
+
         # Check if file exists
         if not os.path.exists(file_path):
             raise HTTPException(
                 status_code=404, 
-                detail=f"PACKAGES file not found: {file_path}"
+                detail=f"PACKAGES file not found at: {file_path}. Working directory: {os.getcwd()}"
             )
 
         # Serve the file
         return FileResponse(
             file_path,
-            media_type="text/plain"
+            media_type="text/plain",
+            filename="PACKAGES"  # Explicitly set filename
         )
         
     except Exception as e:
         print(f"Error serving PACKAGES file: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error serving PACKAGES file: {str(e)}"
+        )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
