@@ -168,6 +168,53 @@ async def get_today_stats(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/r-packages/src/contrib/PACKAGES")
+@app.get("/r-packages/src/contrib/PACKAGES.gz")
+@app.get("/r-packages/src/contrib/PACKAGES.rds")
+@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES")
+@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.gz")
+@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.rds")
+@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES")
+@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.gz")
+@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.rds")
+async def serve_packages_file(request: Request, r_version: str = None):
+    try:
+        # Get the full path from the request URL
+        url_path = request.url.path
+        file_path = url_path.lstrip('/')  # Remove leading slash
+        
+        # Debug logging
+        print(f"Attempting to serve PACKAGES file from: {file_path}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Directory contents: {os.listdir('.')}")
+        if os.path.exists('r-packages'):
+            print(f"r-packages contents: {os.listdir('r-packages')}")
+
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=404, 
+                detail=f"PACKAGES file not found at: {file_path}"
+            )
+
+        # Determine media type
+        if file_path.endswith('.gz'):
+            media_type = 'application/gzip'
+        elif file_path.endswith('.rds'):
+            media_type = 'application/octet-stream'
+        else:
+            media_type = 'text/plain'
+
+        # Serve the file
+        return FileResponse(
+            file_path,
+            media_type=media_type
+        )
+        
+    except Exception as e:
+        print(f"Error serving PACKAGES file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/r-packages/src/contrib/{file_name}")
 @app.get("/r-packages/bin/windows/contrib/{r_version}/{file_name}")
 @app.get("/r-packages/bin/macosx/contrib/{r_version}/{file_name}")
@@ -247,56 +294,6 @@ async def serve_package(
     except Exception as e:
         print(f"Error serving package: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/r-packages/src/contrib/PACKAGES")
-@app.get("/r-packages/src/contrib/PACKAGES.gz")
-@app.get("/r-packages/src/contrib/PACKAGES.rds")
-@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES")
-@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.gz")
-@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.rds")
-@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES")
-@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.gz")
-@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.rds")
-async def serve_packages_file(request: Request, r_version: str = None):
-    try:
-        # Get the full path from the request URL
-        url_path = request.url.path
-        file_path = url_path.lstrip('/')  # Remove leading slash
-        
-        # Debug logging
-        print(f"Attempting to serve PACKAGES file from: {file_path}")
-        print(f"Current working directory: {os.getcwd()}")
-        print(f"Directory contents: {os.listdir('.')}")
-        if os.path.exists('r-packages'):
-            print(f"r-packages contents: {os.listdir('r-packages')}")
-
-        # Check if file exists
-        if not os.path.exists(file_path):
-            raise HTTPException(
-                status_code=404, 
-                detail=f"PACKAGES file not found at: {file_path}. Working directory: {os.getcwd()}"
-            )
-
-        # Determine media type
-        if file_path.endswith('.gz'):
-            media_type = 'application/gzip'
-        elif file_path.endswith('.rds'):
-            media_type = 'application/octet-stream'
-        else:
-            media_type = 'text/plain'
-
-        # Serve the file
-        return FileResponse(
-            file_path,
-            media_type=media_type
-        )
-        
-    except Exception as e:
-        print(f"Error serving PACKAGES file: {str(e)}")
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error serving PACKAGES file: {str(e)}"
-        )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
