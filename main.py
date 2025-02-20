@@ -14,23 +14,20 @@ from sqlalchemy.orm import sessionmaker, Session
 
 # Database setup
 DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set")
+
+if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-class Download(Base):
-    __tablename__ = "downloads"
-    id = Column(Integer, primary_key=True)
-    package = Column(String)
-    date = Column(Date)
-    count = Column(Integer)
-    platform = Column(String)
-
-# Create tables
-Base.metadata.create_all(bind=engine)
+# Add error handling for database connection
+try:
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base = declarative_base()
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    raise RuntimeError(f"Failed to connect to database: {str(e)}")
 
 # Dependency
 def get_db():
@@ -45,16 +42,18 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def get_index(request: Request, db: Session = Depends(get_db)):
-    # Get download stats for display
-    downloads = db.query(Download).order_by(desc(Download.date)).all()
-    return templates.TemplateResponse(
-        "index.html", 
-        {
-            "request": request, 
-            "year": datetime.now().year,
-            "downloads": downloads
-        }
-    )
+    try:
+        downloads = db.query(Download).order_by(desc(Download.date)).all()
+        return templates.TemplateResponse(
+            "index.html", 
+            {
+                "request": request, 
+                "year": datetime.now().year,
+                "downloads": downloads
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/download/{package}")
 async def download_package(
@@ -66,7 +65,7 @@ async def download_package(
     try:
         today = date.today()
         
-        # Get or create download record
+        # Get or create download record - using get() with synchronize_session
         download = db.query(Download).filter(
             Download.package == package,
             Download.date == today,
@@ -82,7 +81,13 @@ async def download_package(
             )
             db.add(download)
         else:
-            download.count += 1
+            # Use SQL update for atomic increment
+            db.query(Download).filter(
+                Download.id == download.id
+            ).update(
+                {"count": Download.count + 1},
+                synchronize_session=False
+            )
         
         db.commit()
         
@@ -103,19 +108,27 @@ async def download_package(
 @app.get("/stats/{date}/{package}")
 async def get_stats(date: str, package: str, db: Session = Depends(get_db)):
     try:
-        download = db.query(Download).filter(
+        downloads = db.query(Download).filter(
             Download.package == package,
             Download.date == date
-        ).first()
+        ).all()
         
-        if not download:
-            return {"package": package, "date": date, "count": 0}
+        if not downloads:
+            return {"package": package, "date": date, "total_count": 0, "by_platform": {}}
+            
+        total_count = sum(d.count for d in downloads)
+        by_platform = {
+            d.platform: {
+                "count": d.count,
+                "date": d.date.isoformat()
+            } for d in downloads
+        }
             
         return {
-            "package": download.package,
-            "date": download.date.isoformat(),
-            "count": download.count,
-            "platform": download.platform
+            "package": package,
+            "date": date,
+            "total_count": total_count,
+            "by_platform": by_platform
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -137,6 +150,15 @@ async def get_today_stats(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class Download(Base):
+    __tablename__ = "downloads"
+    id = Column(Integer, primary_key=True)         # 4 bytes
+    package = Column(String)                       # variable
+    date = Column(Date)                           # 4 bytes
+    count = Column(Integer)                       # 4 bytes
+    platform = Column(String)                     # variable
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    host = os.environ.get("HOST", "0.0.0.0")
+    uvicorn.run("main:app", host=host, port=port, log_level="info")
