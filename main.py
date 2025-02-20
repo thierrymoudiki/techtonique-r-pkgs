@@ -254,7 +254,7 @@ async def serve_packages_file(request: Request, r_version: str = None):
             file_path = f"r-packages/bin/windows/contrib/{r_version}/PACKAGES"
         elif "macosx" in str(request.url):
             file_path = f"r-packages/bin/macosx/contrib/{r_version}/PACKAGES"
-        else:
+        else:  # source
             file_path = "r-packages/src/contrib/PACKAGES"
 
         # Debug logging
