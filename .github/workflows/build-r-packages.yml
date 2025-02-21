@@ -638,9 +638,18 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions@github.com'
+          
+          # Fetch latest changes
+          git fetch origin main
+          
+          # Either rebase
+          git rebase origin/main
+          # OR merge (choose one strategy)
+          # git merge origin/main
+          
           git add r-packages/
           git commit -m "Update R packages repository" || echo "No changes to commit"
-          git push
+          git push origin main
 
       - name: Verify Windows build environment
         if: runner.os == 'Windows'

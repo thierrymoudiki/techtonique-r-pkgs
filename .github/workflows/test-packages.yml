@@ -53,7 +53,9 @@ jobs:
           }
           
           # Test each package independently
-          packages <- c("crossvalidation", "esgtoolkit", "misc", "vars")
+          packages <- c("crossvalidation", "esgtoolkit", "ahead", "bcn", 
+                       "learningmachine", "nnetsauce", "mlsauce", "forecastingapi",
+                       "simulatetimeseries", "bayesianrvfl", "misc", "tisthemachinelearner")
           results <- sapply(packages, test_package)
           
           # Report results
