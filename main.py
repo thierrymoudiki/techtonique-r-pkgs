@@ -106,7 +106,7 @@ async def download_package(
         db.commit()
         
         # Construct package URL based on platform
-        base_url = "https://techtonique.github.io/r-packages"
+        base_url = "https://r-packages.techtonique.net"  # Using the existing domain
         if platform == "windows":
             package_url = f"{base_url}/bin/windows/contrib/{r_version}/{package}_{version}.zip"
         elif platform == "macos":
