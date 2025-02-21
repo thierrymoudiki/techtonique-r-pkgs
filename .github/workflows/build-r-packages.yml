@@ -647,19 +647,17 @@ jobs:
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions@github.com'
           
-          # Stage all changes first
+          # Stage and commit our changes first
           git add .
+          git commit -m "Update R packages repository" || echo "No changes to commit"
           
           # Fetch latest changes
           git fetch origin main
           
-          # Either rebase
+          # Rebase our commit on top of main
           git rebase origin/main
-          # OR merge (choose one strategy)
-          # git merge origin/main
           
-          git add r-packages/
-          git commit -m "Update R packages repository" || echo "No changes to commit"
+          # Push the result
           git push origin main
 
       - name: Verify Windows build environment
