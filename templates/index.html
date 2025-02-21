@@ -3,11 +3,14 @@
 {% block content %}
 <div id="container">
     <h1>
-        <a href="https://github.com/Techtonique">Techtonique</a>'s R Packages Repository
+        <a href="https://github.com/Techtonique">Techtonique</a>'s R packages repository
     </h1>
 
     <p>
-        Welcome to <a href="https://github.com/Techtonique">Techtonique</a>'s R package repository. This repository hosts various R packages developed by the Techtonique team.
+        Welcome to <a href="https://github.com/Techtonique">Techtonique</a>'s R package source repository.         
+        <br>
+        <br>
+        Think of it as CRAN or R-universe but for Techtonique's packages (#wildlife).
         <br>
         <br>
         Detailed description, documentation and articles about the packages are available at 
@@ -43,8 +46,6 @@
     </div>
     <h3>Another way (use <code>options</code> only once)</h3>
     <div class="section">
-        <h4>Using Multiple Repositories</h4>
-        <p>You can configure R to use both Techtonique's repository and CRAN:</p>
         <pre>
             <code>
                 options(repos = c(
@@ -53,7 +54,7 @@
                 ))
             </code>
         </pre>
-        <p>After setting these options, you can install packages normally:</p>
+        <p>After setting these options, you can install packages as:</p>
         <pre>
             <code>
                 install.packages("package_name")

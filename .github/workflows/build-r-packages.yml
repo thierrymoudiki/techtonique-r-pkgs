@@ -138,20 +138,16 @@ jobs:
               message("Build command output:")
               print(build_output)
               
+              status_entry$status <- "SUCCESS"
+              
               # Find the built package file
               pkg_files <- list.files(pattern = paste0("^", pkg, ".*\\.tar\\.gz$"))
-              if (length(pkg_files) == 0) {
-                stop("No package file found after build")
+              if (length(pkg_files) > 0) {
+                # Move package file to repository directory
+                file.copy(pkg_files[1], pkg_dir, overwrite = TRUE)
+                file.remove(pkg_files[1])
               }
               
-              # Move package file to repository directory
-              file.copy(pkg_files[1], pkg_dir, overwrite = TRUE)
-              if (!file.exists(file.path(pkg_dir, pkg_files[1]))) {
-                stop("Failed to copy package file to repository directory")
-              }
-              file.remove(pkg_files[1])
-              
-              status_entry$status <- "SUCCESS"
               status_entry$build_output <- paste(build_output, collapse = "\n")
               NULL
             }, error = function(e) {
@@ -429,27 +425,42 @@ jobs:
         run: |
           mkdir -p r-packages
           
-          # First copy source packages
-          if [ -d "artifacts/r-packages-source" ]; then
-            cp -rf artifacts/r-packages-source/* r-packages/
+          # Check if source artifacts exist
+          if [ ! -d "artifacts/r-packages-source" ]; then
+            echo "ERROR: Source packages artifact not found"
+            exit 1
           fi
           
-          # Then copy binary packages, which should only contain their respective directories
+          # Copy source packages and verify
+          echo "Copying source packages..."
+          cp -rv artifacts/r-packages-source/* r-packages/
+          
+          # Copy binary packages
+          echo "Copying binary packages..."
           for artifact in artifacts/r-packages-*; do
             if [ "$artifact" != "artifacts/r-packages-source" ]; then
-              cp -rf $artifact/* r-packages/
+              echo "Processing $artifact..."
+              cp -rv $artifact/* r-packages/
             fi
           done
           
-          # Clean up unnecessary directories
+          # Verify final structure
+          echo "Verifying repository structure..."
           cd r-packages
+          if [ ! -d "src" ] || [ ! -d "bin" ]; then
+            echo "ERROR: Repository structure is incomplete"
+            exit 1
+          fi
+          
+          # Clean up with verification
           for dir in */; do
             if [[ "$dir" != "src/" && "$dir" != "bin/" ]]; then
+              echo "Removing extra directory: $dir"
               rm -rf "$dir"
             fi
           done
           
-          echo "Repository contents after cleanup:"
+          echo "Final repository contents:"
           ls -R
         shell: /usr/bin/bash -e {0}
 

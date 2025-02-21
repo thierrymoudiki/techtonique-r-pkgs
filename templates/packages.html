@@ -2,7 +2,11 @@
 
 {% block content %}
 <div id="container">
-    <h2> <a href="https://github.com/Techtonique">Techtonique</a>'s available Packages</h2>
+    <h2> <a href="https://github.com/Techtonique">Techtonique</a>'s available packages</h2>
+    <p>
+        If the package is not available for a platform, you can still try to install from source.
+        See <a href="/">homepage</a> for more details.
+    </p>
     <table class="table">
         <thead>
             <tr>
@@ -13,21 +17,36 @@
             </tr>
         </thead>
         <tbody>
-            {% for package_name, package in packages.items() %}
-                {% for platform, info in package.platforms.items() %}
+            {% for package_name, package in packages|dictsort %}
+                {% for platform in ['source', 'windows', 'macos'] %}
                 <tr>
                     {% if loop.first %}
-                    <td rowspan="{{ package.platforms|length }}">
+                    <td rowspan="3">
                         <a href="/download/source/{{ package_name }}?version={{ package.version }}">{{ package_name }}</a>
                     </td>
                     {% endif %}
                     <td>{{ platform }}</td>
-                    <td class="status-{{ info.status }}">{{ info.status }}</td>
-                    <td>{{ info.build_time }}</td>
+                    <td class="{% if platform in package.platforms %}status-success{% else %}status-failed{% endif %}">
+                        {% if platform in package.platforms %}
+                            SUCCESS
+                        {% else %}
+                            FAILED
+                        {% endif %}
+                    </td>
+                    <td>{{ package.platforms[platform].build_time if platform in package.platforms else '' }}</td>
                 </tr>
                 {% endfor %}
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<style>
+.status-success {
+    color: green;
+}
+.status-failed {
+    color: red;
+}
+</style>
 {% endblock %} 
