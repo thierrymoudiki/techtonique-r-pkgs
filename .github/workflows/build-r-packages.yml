@@ -9,9 +9,15 @@ on:
       - 'r-packages/**'
       - '.github/workflows/r-packages.yml'
   workflow_dispatch:
+    inputs:
+      job_to_run:
+        description: 'Job to run (leave empty for full workflow)'
+        required: false
+        default: ''
 
 jobs:
   build-source:
+    if: github.event.inputs.job_to_run == '' || github.event.inputs.job_to_run == 'build-source'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -194,6 +200,7 @@ jobs:
           path: r-packages
 
   build-binaries:
+    if: github.event.inputs.job_to_run == '' || github.event.inputs.job_to_run == 'build-binaries'
     needs: build-source
     strategy:
       fail-fast: false
@@ -405,6 +412,7 @@ jobs:
           path: r-packages
 
   finalize:
+    if: github.event.inputs.job_to_run == '' || github.event.inputs.job_to_run == 'finalize'
     needs: [build-source, build-binaries]
     runs-on: ubuntu-latest
     permissions:
@@ -638,6 +646,9 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions@github.com'
+          
+          # Stage all changes first
+          git add .
           
           # Fetch latest changes
           git fetch origin main
