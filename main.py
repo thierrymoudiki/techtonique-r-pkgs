@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from sqlalchemy import create_engine, Column, Integer, String, Date, desc
+from sqlalchemy import create_engine, Column, Integer, String, Date, desc, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -82,29 +82,55 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
                     packages[package_name] = {
                         "package": package_name,
                         "version": version,
-                        "platforms": {}
+                        "platforms": {
+                            "source": {
+                                "status": "SUCCESS",  # If file exists, it's a success
+                                "build_time": datetime.fromtimestamp(tar_gz.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                            }
+                        }
                     }
-                
-        # Read build status files
+
+        # Check Windows binaries
+        win_dir = r_packages_dir / "bin" / "windows" / "contrib" / "4.3"
+        if win_dir.exists():
+            for zip_file in win_dir.glob("*.zip"):
+                package_name = zip_file.name.split("_")[0]
+                if package_name in packages:
+                    packages[package_name]["platforms"]["windows"] = {
+                        "status": "SUCCESS",
+                        "build_time": datetime.fromtimestamp(zip_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    }
+
+        # Check macOS binaries
+        mac_dir = r_packages_dir / "bin" / "macosx" / "contrib"
+        if mac_dir.exists():
+            for tgz_file in mac_dir.glob("*.tgz"):
+                package_name = tgz_file.name.split("_")[0]
+                if package_name in packages:
+                    packages[package_name]["platforms"]["macos"] = {
+                        "status": "SUCCESS",
+                        "build_time": datetime.fromtimestamp(tgz_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    }
+
+        # Read build status files to get list of all packages that should exist
         for json_file in r_packages_dir.glob("build_status_*.json"):
             with open(json_file) as f:
                 build_info = json.load(f)
                 platform = build_info.get("platform", "unknown")
                 for pkg_name, pkg_info in build_info.get("packages", {}).items():
                     if pkg_name not in packages:
-                        packages[pkg_name] = {
-                            "package": pkg_name,
-                            "version": "",
-                            "platforms": {}
+                        # Package was in build status but no file exists
+                        if pkg_name not in packages:
+                            packages[pkg_name] = {
+                                "package": pkg_name,
+                                "version": "",
+                                "platforms": {}
+                            }
+                        packages[pkg_name]["platforms"][platform] = {
+                            "status": "FAILED",  # No file exists, so it failed
+                            "build_time": pkg_info.get("build_time", ""),
+                            "error_message": "No package file found"
                         }
-                    packages[pkg_name]["platforms"][platform] = {
-                        "status": pkg_info.get("status", "Unknown"),
-                        "build_time": pkg_info.get("build_time", ""),
-                        "error_message": pkg_info.get("error_message", "")
-                    }
-
-        # Debug print
-        print("Available packages and versions:", {k: v["version"] for k, v in packages.items()})
 
         return templates.TemplateResponse(
             "index.html", 
@@ -400,21 +426,124 @@ async def serve_package(
 @app.get("/downloads", response_class=HTMLResponse)
 async def get_downloads(request: Request, db: Session = Depends(get_db)):
     try:
-        # Get all downloads ordered by date (most recent first) and package name
-        downloads = db.query(Download)\
-            .order_by(desc(Download.date), Download.package)\
-            .all()
+        # Use SQL to aggregate downloads by month and package
+        monthly_downloads = db.execute(
+            text("""
+                SELECT 
+                    package,
+                    DATE_TRUNC('month', date) as month,
+                    platform,
+                    SUM(count) as total_count
+                FROM downloads
+                GROUP BY package, DATE_TRUNC('month', date), platform
+                ORDER BY DATE_TRUNC('month', date) DESC, package, platform
+            """)
+        ).fetchall()
+        
+        # Organize the data by month and package
+        downloads_by_month = {}
+        for row in monthly_downloads:
+            month_str = row.month.strftime("%Y-%m")
+            if month_str not in downloads_by_month:
+                downloads_by_month[month_str] = {}
+            
+            if row.package not in downloads_by_month[month_str]:
+                downloads_by_month[month_str][row.package] = {
+                    'total': 0,
+                    'platforms': {}
+                }
+            
+            downloads_by_month[month_str][row.package]['platforms'][row.platform] = row.total_count
+            downloads_by_month[month_str][row.package]['total'] += row.total_count
         
         return templates.TemplateResponse(
             "downloads.html",
             {
                 "request": request,
-                "downloads": downloads,
+                "downloads_by_month": downloads_by_month,
                 "year": datetime.now().year
             }
         )
     except Exception as e:
         print(f"Error in get_downloads: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/packages", response_class=HTMLResponse)
+async def get_packages(request: Request, db: Session = Depends(get_db)):
+    try:
+        packages = {}
+        r_packages_dir = Path("r-packages")
+        
+        # Get latest version for each package from r-packages/src/contrib
+        src_contrib = r_packages_dir / "src" / "contrib"
+        if src_contrib.exists():
+            for tar_gz in src_contrib.glob("*.tar.gz"):
+                package_name = tar_gz.name.split("_")[0]
+                version = tar_gz.name.split("_")[1].replace(".tar.gz", "")
+                if package_name not in packages:
+                    packages[package_name] = {
+                        "package": package_name,
+                        "version": version,
+                        "platforms": {
+                            "source": {
+                                "status": "SUCCESS",  # If file exists, it's a success
+                                "build_time": datetime.fromtimestamp(tar_gz.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                            }
+                        }
+                    }
+
+        # Check Windows binaries
+        win_dir = r_packages_dir / "bin" / "windows" / "contrib" / "4.3"
+        if win_dir.exists():
+            for zip_file in win_dir.glob("*.zip"):
+                package_name = zip_file.name.split("_")[0]
+                if package_name in packages:
+                    packages[package_name]["platforms"]["windows"] = {
+                        "status": "SUCCESS",
+                        "build_time": datetime.fromtimestamp(zip_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    }
+
+        # Check macOS binaries
+        mac_dir = r_packages_dir / "bin" / "macosx" / "contrib"
+        if mac_dir.exists():
+            for tgz_file in mac_dir.glob("*.tgz"):
+                package_name = tgz_file.name.split("_")[0]
+                if package_name in packages:
+                    packages[package_name]["platforms"]["macos"] = {
+                        "status": "SUCCESS",
+                        "build_time": datetime.fromtimestamp(tgz_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    }
+
+        # Read build status files to get list of all packages that should exist
+        for json_file in r_packages_dir.glob("build_status_*.json"):
+            with open(json_file) as f:
+                build_info = json.load(f)
+                platform = build_info.get("platform", "unknown")
+                for pkg_name, pkg_info in build_info.get("packages", {}).items():
+                    if pkg_name not in packages:
+                        # Package was in build status but no file exists
+                        if pkg_name not in packages:
+                            packages[pkg_name] = {
+                                "package": pkg_name,
+                                "version": "",
+                                "platforms": {}
+                            }
+                        packages[pkg_name]["platforms"][platform] = {
+                            "status": "FAILED",  # No file exists, so it failed
+                            "build_time": pkg_info.get("build_time", ""),
+                            "error_message": "No package file found"
+                        }
+
+        return templates.TemplateResponse(
+            "packages.html", 
+            {
+                "request": request, 
+                "year": datetime.now().year,
+                "packages": packages
+            }
+        )
+    except Exception as e:
+        print(f"Error in get_packages: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

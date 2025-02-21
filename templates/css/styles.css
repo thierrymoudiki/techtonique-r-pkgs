@@ -10,9 +10,11 @@ body {
 }
 
 #container {
-    width: 1200px;
-    margin: 100px 0 75px 100px; /* last number = margin to the left */
-    text-align: left; /* Align content to the left */
+    width: 1100px;
+    margin: 100px auto 75px auto; /* top right bottom left */
+    text-align: left;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 #container-ide {
@@ -390,15 +392,51 @@ p.comments {
 
 h1, h2 {
     color: #333;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
 }
 
 h1 {
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
+    border-bottom: none;  /* Remove the automatic border */
+    margin-bottom: 40px;
 }
 
 .thead-dark {
     background-color: #343a40;
     color: white;
+}
+
+/* Add these styles to your existing CSS */
+.section {
+    margin: 20px 0;
+    padding: 15px 0;
+    border-top: 1px solid #333;
+}
+
+.section:last-child {
+    border-bottom: 1px solid #333;
+}
+
+pre code {
+    display: block;
+    padding: 15px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+ul {
+    padding-left: 20px;
+}
+
+ul li {
+    margin: 10px 0;
+}
+
+h3 {
+    margin-top: 30px;
+    color: #28a745;  /* Same green as SUCCESS status */
+}
+
+h4 {
+    margin: 20px 0 15px 0;
 }

@@ -1,34 +1,84 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>
-    Techtonique R Packages Repository
-</h1>
+<div id="container">
+    <h1>
+        <a href="https://github.com/Techtonique">Techtonique</a>'s R Packages Repository
+    </h1>
 
-<table class="table">
-    <thead class="table-dark">
-        <tr>
-            <th>Package</th>
-            <th>Platform</th>
-            <th>Status</th>
-            <th>Build Time</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for package_name, package in packages.items() %}
-            {% for platform, info in package.platforms.items() %}
-            <tr>
-                {% if loop.first %}
-                <td rowspan="{{ package.platforms|length }}">
-                    <a href="/download/source/{{ package_name }}?version={{ package.version }}">{{ package_name }}</a>
-                </td>
-                {% endif %}
-                <td>{{ platform }}</td>
-                <td class="status-{{ info.status }}">{{ info.status }}</td>
-                <td>{{ info.build_time }}</td>
-            </tr>
-            {% endfor %}
-        {% endfor %}
-    </tbody>
-</table>
+    <p>
+        Welcome to <a href="https://github.com/Techtonique">Techtonique</a>'s R package repository. This repository hosts various R packages developed by the Techtonique team.
+        <br>
+        <br>
+        Detailed description, documentation and articles about the packages are available at 
+        <a href="https://techtonique.github.io/">https://techtonique.github.io/</a>.
+    </p>
+
+    <h3>Installation Instructions</h3>
+    <div class="section"></div>
+    <p>To install R packages from <a href="https://github.com/Techtonique" target="_blank">Techtonique's R package repository</a>, use one of these methods:</p>
+
+    <h4>Method 1: Direct Installation (Recommended)</h4>
+    <pre>
+        <code>
+            install.packages("package_name", repos = "https://r-packages.techtonique.net")
+        </code>
+    </pre>
+
+    <h4>Method 2: Source Installation</h4>
+    <pre>
+        <code>
+            # If Method 1 fails, you can install from source:
+
+            install.packages("package_name", repos = "https://r-packages.techtonique.net", type = "source")
+        </code>
+    </pre>
+
+    <p><strong>Note about Method 2 (source installation):</strong></p>
+    <ul>
+        <li><strong>Linux:</strong> Source installation typically works out of the box (requires build-essential/development tools)</li>
+        <li><strong>macOS:</strong> Requires Xcode Command Line Tools (<code>xcode-select --install</code>)</li>
+        <li><strong>Windows:</strong> Requires Rtools (<a href="https://cran.r-project.org/bin/windows/Rtools/" target="_blank">download here</a>)</li>
+    </ul>
+    </div>
+    <h3>Another way (use <code>options</code> only once)</h3>
+    <div class="section">
+        <h4>Using Multiple Repositories</h4>
+        <p>You can configure R to use both Techtonique's repository and CRAN:</p>
+        <pre>
+            <code>
+                options(repos = c(
+                    techtonique = "https://r-packages.techtonique.net",
+                    CRAN = "https://cloud.r-project.org"
+                ))
+            </code>
+        </pre>
+        <p>After setting these options, you can install packages normally:</p>
+        <pre>
+            <code>
+                install.packages("package_name")
+            </code>
+        </pre>
+    </div>
+
+    <h3>Third way: from GitHub (development version)</h3>
+    <div class="section">
+        <p>If you want to install the development version of a package, you can clone the repository and install it from the local directory:</p>
+        <pre>
+            <code>
+                remotes::install_github("Techtonique/package_name")
+            </code>
+        </pre>
+    </div>
+
+    <h3>Resources</h3>
+    <div class="section">
+        <ul>
+            <li><a href="/packages">View available packages</a> - List of all packages and their status</li>
+            <li><a href="/downloads">Download statistics</a> - Package download counts and trends</li>
+            <li><a href="https://github.com/Techtonique" target="_blank">GitHub repository</a> - Source code and development</li>
+            <li><a href="https://www.techtonique.net" target="_blank">Techtonique website</a> - Main project website</li>
+        </ul>
+    </div>
+</div>
 {% endblock %}

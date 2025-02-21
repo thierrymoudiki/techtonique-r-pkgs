@@ -2,26 +2,31 @@
 
 {% block content %}
 <div id="container">
-    <h2>Package Downloads</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Package</th>
-                <th>Date</th>
-                <th>Platform</th>
-                <th>Count</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for download in downloads %}
-            <tr>
-                <td>{{ download.package }}</td>
-                <td>{{ download.date }}</td>
-                <td>{{ download.platform }}</td>
-                <td>{{ download.count }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <h2><a href="https://github.com/Techtonique">Techtonique</a>'s Monthly Download Statistics</h2>
+    {% for month, packages in downloads_by_month.items() %}
+        <h3>{{ month }}</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Package</th>
+                    <th>Total Downloads</th>
+                    <th>By Platform</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for package, stats in packages.items() %}
+                <tr>
+                    <td>{{ package }}</td>
+                    <td>{{ stats.total }}</td>
+                    <td>
+                        {% for platform, count in stats.platforms.items() %}
+                            {{ platform }}: {{ count }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
 </div>
 {% endblock %}

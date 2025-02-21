@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="container">
+    <h2> <a href="https://github.com/Techtonique">Techtonique</a>'s available Packages</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Package</th>
+                <th>Platform</th>
+                <th>Status</th>
+                <th>Build Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for package_name, package in packages.items() %}
+                {% for platform, info in package.platforms.items() %}
+                <tr>
+                    {% if loop.first %}
+                    <td rowspan="{{ package.platforms|length }}">
+                        <a href="/download/source/{{ package_name }}?version={{ package.version }}">{{ package_name }}</a>
+                    </td>
+                    {% endif %}
+                    <td>{{ platform }}</td>
+                    <td class="status-{{ info.status }}">{{ info.status }}</td>
+                    <td>{{ info.build_time }}</td>
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %} 
