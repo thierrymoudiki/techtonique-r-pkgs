@@ -1,0 +1,404 @@
+body {
+    background-color: black; /* Darker background color */
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;  /* Reduced padding */
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 14px;  /* Base font size reduced */
+}
+
+#container {
+    width: 1200px;
+    margin: 100px 0 75px 100px; /* last number = margin to the left */
+    text-align: left; /* Align content to the left */
+}
+
+#container-ide {
+    width: 1400px;
+    margin: 0px 0px 0px 12px; /* last number = margin to the left */
+}
+ 
+.index-container {
+    display: flex;
+    align-items: flex-start; 
+    gap: 70px; 
+}
+
+.index-container2 {
+    width: 700px;   
+    text-align: left; /* Align content to the left */
+}
+
+.index-container3 {
+    width: 1400px;   
+    text-align: left; /* Align content to the left */
+}
+
+.index-container4 {
+    width: 900px;   
+    text-align: left; /* Align content to the left */
+}
+
+
+#description {
+    flex: 1; /* Occupy 30% of the width */
+    max-width: 300px; /* Limit maximum width */
+    padding-right: 20px; /* Add space between description and graph */
+}
+
+.cv {
+    flex: 1; /* Occupy 70% of the width */
+    height: 500px;
+}
+
+button {
+    margin-bottom: 20px; /* Add spacing between the button and the graph */    
+    background-color: #444444;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: green; 
+}
+
+/* Matte blue button styles */
+.button-blue {
+    background-color: #007BFF; /* Matte blue background */
+    color: white; /* White text */
+}
+
+#menu {
+    display: flex;
+    justify-content: flex-start;
+    padding: 10px;
+    background-color: #1f1f1f;  /* Match the table background */
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;  /* Subtle border */
+    position: fixed;  /* Make navbar fixed at top */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;  /* Ensure it stays on top */
+}
+
+#menu a {
+    color: #ffffff;
+    text-decoration: none;
+    margin-right: 20px;
+    padding: 5px 10px;
+    transition: color 0.3s ease;
+}
+
+#menu a:hover {
+    color: #28a745;  /* Same green as SUCCESS status */
+}
+
+#menu a:first-child {    
+    margin-left: 20px;
+}
+
+li {
+    list-style-type: none; /* Remove bullet points from list items */
+}
+
+.bullet-list {
+    list-style-type: disc; /* This gives the standard bullet point */
+    padding-left: 20px; /* This gives some indentation */
+}
+
+.bullet-list li {
+    display: list-item; /* Ensures list items are displayed as list items */
+    margin-bottom: 5px; /* Adds some space between list items */
+    list-style-type: disc; /* Add this line to explicitly set bullet points */
+}
+
+a {
+    color: lightgray; 
+}
+
+/* 
+a:visited {
+    color: orange; 
+} 
+*/
+
+p b {
+    color: lightgray;
+  }
+
+
+/* styling of forms */
+
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  width: 500px;
+  height: 350px;
+
+  margin-top: 5px;
+  padding-top: 20px;
+
+  border-radius: 12px;
+
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+
+  background: #1f1f1f;
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.199);
+}
+
+.subtitle {
+  font-size: 14px;
+  color: white; /*rgba(177, 177, 177, 0.3);*/
+}
+
+.subsubtitle {
+  font-size: 10px;
+  color: white; /*rgba(177, 177, 177, 0.3);*/
+}
+
+input {
+  border: none;
+  border-bottom: solid rgb(143, 143, 143) 1px;
+
+  margin-bottom: 30px;
+
+  background: none;
+  color: rgba(255, 255, 255, 0.555);
+
+  height: 35px;
+  width: 300px;
+}
+
+p.comments {
+    display: none;
+}
+
+/* styling of password inputs */
+.progress-container {
+  width: 100%;
+  height: 15px;
+  background-color: #eee;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #ccc;
+  transition: width 0.3s ease-in-out;
+}
+
+/* survival plot */
+.plot-surv .axis path,
+.plot-surv .axis line {
+    fill: none;
+    shape-rendering: crispEdges;
+}
+.plot-surv .line {
+    fill: none;
+    stroke: lightgreen;
+    stroke-width: 2px;
+}
+.plot-surv .area {
+    fill: lightgray; /* Light gray for confidence intervals */
+    opacity: 0.5; /* Adjust opacity for visibility */
+}
+
+#token-response {
+    background-color: lightgray;
+    padding: 20px; /* Increased padding */
+    border-radius: 5px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 16px; /* Increased font size */
+    max-width: 400px; /* Added max-width for better readability on larger screens */
+    margin: 20px 0; /* Added some vertical margin */
+    color: black;
+}
+
+#token-expiry {
+    background-color: lightgray;
+    padding: 20px; /* Increased padding */
+    border-radius: 5px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 16px; /* Increased font size */
+    max-width: 400px; /* Added max-width for better readability on larger screens */
+    margin: 20px 0; /* Added some vertical margin */
+    color: black;
+}
+
+#token-response {
+    background-color: lightgray;
+    padding: 20px;
+    border-radius: 5px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 16px;
+    width: 440px; /* Fixed width */
+    height: 105px; /* Fixed height */
+    margin: 20px 0;
+    color: black;
+}
+
+#token-expiry {
+    background-color: lightgray;
+    padding: 20px;
+    border-radius: 5px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 16px;
+    width: 440px; /* Fixed width */
+    height: 15px; /* Fixed height */
+    margin: 20px 0;
+    color: black;
+}
+
+#homeimgcontainer {
+    width: 400px;
+    height: 400px;
+    padding-top: 20px;
+    padding-right: 50px;
+    padding-bottom: 30px;
+    padding-left: 50px;
+    box-sizing: border-box; /* Ensure padding doesn't affect the total width/height */
+    display: flex;
+    justify-content: center; /* Center the image horizontally */
+    align-items: center; /* Center the image vertically */
+}
+
+#homeimgcontainer img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Ensure the image maintains aspect ratio */
+}
+
+
+.auth-buttons-container {
+    display: flex;
+    flex-direction: column;
+    align-items: left; /* Center align the buttons horizontally */
+    gap: 20px; /* Space between the buttons */
+}
+
+.auth-button {
+    display: flex;
+    align-items: center; /* Vertically align text and logo */
+    justify-content: center; /* Center the content horizontally */
+    margin-bottom: 0; /* Avoid double spacing from button margin and gap */
+    background-color: #444444;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 250px; /* Adjust the width as needed */
+}
+
+.auth-button:hover {
+    background-color: #333333; /* Darken on hover */
+}
+
+.auth-logo {
+    width: 20px; /* Size of the logo */
+    height: 20px;
+    margin-right: 10px; /* Space between the logo and text */
+}
+
+.table {
+    width: 80%;
+    border-collapse: collapse;
+    margin: 25px auto;
+    border: 1px solid #444;
+    table-layout: fixed;
+    background-color: #1f1f1f;  /* Dark background matching techtonique */
+    color: #ffffff;  /* White text */
+}
+
+.table th, .table td {
+    padding: 8px 10px;
+    border: 1px solid #333;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table th {
+    background-color: #1f1f1f;
+    border-bottom: 1px solid #444;
+    font-weight: normal;  /* Matching techtonique's light style */
+    color: #ffffff;
+}
+
+.table td a {
+    color: #0d6efd;  /* Bootstrap primary color */
+    text-decoration: none;
+}
+
+.table td a:hover {
+    color: #0a58ca;  /* Darker blue on hover */
+    text-decoration: underline;
+}
+
+/* Column widths */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+    width: 25%;  /* Package column */
+}
+
+.table th:nth-child(2),
+.table td:nth-child(2) {
+    width: 25%;  /* Platform column */
+}
+
+.table th:nth-child(3),
+.table td:nth-child(3) {
+    width: 20%;  /* Status column */
+    font-weight: 500;
+}
+
+.table th:nth-child(4),
+.table td:nth-child(4) {
+    width: 30%;  /* Build Time column */
+}
+
+/* Status highlighting */
+.status-SUCCESS {
+    color: #28a745;  /* Green for success */
+}
+
+.status-FAILED {
+    color: #dc3545;  /* Red for failure */
+}
+
+h1, h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+h1 {
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.thead-dark {
+    background-color: #343a40;
+    color: white;
+}

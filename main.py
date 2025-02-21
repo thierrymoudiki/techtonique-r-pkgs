@@ -3,14 +3,20 @@ import os
 import uvicorn
 from datetime import date, datetime
 from pathlib import Path
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, File, Request, Query, HTTPException, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from sqlalchemy import create_engine, Column, Integer, String, Date, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Database setup
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -48,22 +54,71 @@ def get_db():
         db.close()
 
 app = FastAPI()
+# Add SessionMiddleware with a secret key
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="your-secret-key-here"  # Replace with a secure secret key
+)
+
+# Mount static files directory
+app.mount("/css", StaticFiles(directory="templates/css"), name="css")
+app.mount("/images", StaticFiles(directory="templates/images"), name="images")
+
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def get_index(request: Request, db: Session = Depends(get_db)):
     try:
-        downloads = db.query(Download).order_by(desc(Download.date)).all()
+        packages = {}
+        r_packages_dir = Path("r-packages")
+        
+        # Get latest version for each package from r-packages/src/contrib
+        src_contrib = r_packages_dir / "src" / "contrib"
+        if src_contrib.exists():
+            for tar_gz in src_contrib.glob("*.tar.gz"):
+                package_name = tar_gz.name.split("_")[0]
+                version = tar_gz.name.split("_")[1].replace(".tar.gz", "")
+                if package_name not in packages:
+                    packages[package_name] = {
+                        "package": package_name,
+                        "version": version,
+                        "platforms": {}
+                    }
+                
+        # Read build status files
+        for json_file in r_packages_dir.glob("build_status_*.json"):
+            with open(json_file) as f:
+                build_info = json.load(f)
+                platform = build_info.get("platform", "unknown")
+                for pkg_name, pkg_info in build_info.get("packages", {}).items():
+                    if pkg_name not in packages:
+                        packages[pkg_name] = {
+                            "package": pkg_name,
+                            "version": "",
+                            "platforms": {}
+                        }
+                    packages[pkg_name]["platforms"][platform] = {
+                        "status": pkg_info.get("status", "Unknown"),
+                        "build_time": pkg_info.get("build_time", ""),
+                        "error_message": pkg_info.get("error_message", "")
+                    }
+
+        # Debug print
+        print("Available packages and versions:", {k: v["version"] for k, v in packages.items()})
+
         return templates.TemplateResponse(
             "index.html", 
             {
                 "request": request, 
                 "year": datetime.now().year,
-                "downloads": downloads
+                "packages": packages,
+                "downloads": db.query(Download).order_by(desc(Download.date)).all()
             }
         )
     except Exception as e:
+        print(f"Error in get_index: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/download/{package}")
 async def download_package(
@@ -123,6 +178,58 @@ async def download_package(
         print(f"Error in download_package: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/download/source/{package}")
+async def download_source_package(
+    package: str, 
+    version: str = Query(..., description="R package version"),
+    db: Session = Depends(get_db)
+):
+    try:
+        today = date.today()
+        file_path = f"r-packages/src/contrib/{package}_{version}.tar.gz"
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Package file not found: {file_path}"
+            )
+            
+        # Record the download
+        download = db.query(Download).filter(
+            Download.package == package,
+            Download.date == today,
+            Download.platform == "source"
+        ).first()
+        
+        if not download:
+            download = Download(
+                package=package,
+                date=today,
+                count=1,
+                platform="source"
+            )
+            db.add(download)
+        else:
+            db.query(Download).filter(
+                Download.id == download.id
+            ).update(
+                {"count": Download.count + 1},
+                synchronize_session=False
+            )
+        
+        db.commit()
+        
+        return FileResponse(
+            path=file_path,
+            filename=os.path.basename(file_path),
+            media_type="application/octet-stream"
+        )
+        
+    except Exception as e:
+        print(f"Error in download_source_package: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/stats/{date}/{package}")
 async def get_stats(date: str, package: str, db: Session = Depends(get_db)):
     try:
@@ -168,27 +275,23 @@ async def get_today_stats(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/r-packages/src/contrib/PACKAGES")
-@app.get("/r-packages/src/contrib/PACKAGES.gz")
-@app.get("/r-packages/src/contrib/PACKAGES.rds")
-@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES")
-@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.gz")
-@app.get("/r-packages/bin/windows/contrib/{r_version}/PACKAGES.rds")
-@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES")
-@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.gz")
-@app.get("/r-packages/bin/macosx/contrib/{r_version}/PACKAGES.rds")
+@app.get("/src/contrib/PACKAGES")
+@app.get("/src/contrib/PACKAGES.gz")
+@app.get("/src/contrib/PACKAGES.rds")
+@app.get("/bin/windows/contrib/{r_version}/PACKAGES")
+@app.get("/bin/windows/contrib/{r_version}/PACKAGES.gz")
+@app.get("/bin/windows/contrib/{r_version}/PACKAGES.rds")
+@app.get("/bin/macosx/contrib/{r_version}/PACKAGES")
+@app.get("/bin/macosx/contrib/{r_version}/PACKAGES.gz")
+@app.get("/bin/macosx/contrib/{r_version}/PACKAGES.rds")
 async def serve_packages_file(request: Request, r_version: str = None):
     try:
-        # Get the full path from the request URL
-        url_path = request.url.path
-        file_path = url_path.lstrip('/')  # Remove leading slash
+        # Remove the leading slash and add r-packages prefix
+        url_path = request.url.path.lstrip('/')
+        file_path = f"r-packages/{url_path}"
         
         # Debug logging
         print(f"Attempting to serve PACKAGES file from: {file_path}")
-        print(f"Current working directory: {os.getcwd()}")
-        print(f"Directory contents: {os.listdir('.')}")
-        if os.path.exists('r-packages'):
-            print(f"r-packages contents: {os.listdir('r-packages')}")
 
         # Check if file exists
         if not os.path.exists(file_path):
@@ -205,7 +308,6 @@ async def serve_packages_file(request: Request, r_version: str = None):
         else:
             media_type = 'text/plain'
 
-        # Serve the file
         return FileResponse(
             file_path,
             media_type=media_type
@@ -215,9 +317,9 @@ async def serve_packages_file(request: Request, r_version: str = None):
         print(f"Error serving PACKAGES file: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/r-packages/src/contrib/{file_name}")
-@app.get("/r-packages/bin/windows/contrib/{r_version}/{file_name}")
-@app.get("/r-packages/bin/macosx/contrib/{r_version}/{file_name}")
+@app.get("/src/contrib/{file_name}")
+@app.get("/bin/windows/contrib/{r_version}/{file_name}")
+@app.get("/bin/macosx/contrib/{r_version}/{file_name}")
 async def serve_package(
     request: Request,
     file_name: str,
@@ -229,6 +331,10 @@ async def serve_package(
         if file_name in ["PACKAGES", "PACKAGES.gz", "PACKAGES.rds"]:
             raise HTTPException(status_code=404, detail="Use PACKAGES endpoint")
             
+        # Remove the leading slash and add r-packages prefix
+        url_path = request.url.path.lstrip('/')
+        file_path = f"r-packages/{url_path}"
+        
         # Parse package name and version from file_name
         parts = file_name.rsplit("_", 1)
         if len(parts) != 2:
@@ -240,13 +346,10 @@ async def serve_package(
         # Determine platform from path
         if "windows" in str(request.url):
             platform = "windows"
-            file_path = f"r-packages/bin/windows/contrib/{r_version}/{file_name}"
         elif "macosx" in str(request.url):
             platform = "macos"
-            file_path = f"r-packages/bin/macosx/contrib/{r_version}/{file_name}"
         else:
             platform = "source"
-            file_path = f"r-packages/src/contrib/{file_name}"
 
         # Check if file exists
         if not os.path.exists(file_path):
@@ -284,7 +387,6 @@ async def serve_package(
         # Log the download
         print(f"Package download: {package} {version} for {platform}")
         
-        # Serve the file
         return FileResponse(
             file_path,
             filename=file_name,
@@ -293,6 +395,26 @@ async def serve_package(
         
     except Exception as e:
         print(f"Error serving package: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/downloads", response_class=HTMLResponse)
+async def get_downloads(request: Request, db: Session = Depends(get_db)):
+    try:
+        # Get all downloads ordered by date (most recent first) and package name
+        downloads = db.query(Download)\
+            .order_by(desc(Download.date), Download.package)\
+            .all()
+        
+        return templates.TemplateResponse(
+            "downloads.html",
+            {
+                "request": request,
+                "downloads": downloads,
+                "year": datetime.now().year
+            }
+        )
+    except Exception as e:
+        print(f"Error in get_downloads: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

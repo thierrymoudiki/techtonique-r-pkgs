@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="container">
+    <h2>Package Downloads</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Package</th>
+                <th>Date</th>
+                <th>Platform</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for download in downloads %}
+            <tr>
+                <td>{{ download.package }}</td>
+                <td>{{ download.date }}</td>
+                <td>{{ download.platform }}</td>
+                <td>{{ download.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
