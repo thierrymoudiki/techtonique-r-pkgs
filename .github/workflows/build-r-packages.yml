@@ -206,13 +206,42 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Current release
           - os: windows-latest
             platform: win.binary
+            r-version: 'release'
             path: bin/windows/contrib/4.3
+            continue-on-error: false
           - os: macos-latest
             platform: mac.binary
+            r-version: 'release'
             path: bin/macosx/contrib/4.3
+            continue-on-error: false
             
+          # Previous release
+          - os: windows-latest
+            platform: win.binary
+            r-version: 'oldrel'
+            path: bin/windows/contrib/4.2
+            continue-on-error: false
+          - os: macos-latest
+            platform: mac.binary
+            r-version: 'oldrel'
+            path: bin/macosx/contrib/4.2
+            continue-on-error: false
+            
+          # Development version - allowed to fail
+          - os: windows-latest
+            platform: win.binary
+            r-version: 'devel'
+            path: bin/windows/contrib/4.4
+            continue-on-error: true
+          - os: macos-latest
+            platform: mac.binary
+            r-version: 'devel'
+            path: bin/macosx/contrib/4.4
+            continue-on-error: true
+
     runs-on: ${{ matrix.os }}
     
     steps:
@@ -675,3 +704,18 @@ jobs:
           
           message("\nChecking for Rtools:")
           print(pkgbuild::find_rtools())
+
+      - name: Clean up old versions
+        run: |
+          # For each package, keep only the latest version across all platforms
+          for pkg in */contrib/4.3/*; do
+            if [ -f "$pkg" ]; then
+              base_name=$(echo "$pkg" | sed -E 's/(.*)_[0-9]+\.[0-9]+\.[0-9]+\..*/\1/')
+              latest_version=$(ls ${base_name}_* | sort -V | tail -n1)
+              for old_version in ${base_name}_*; do
+                if [ "$old_version" != "$latest_version" ]; then
+                  rm "$old_version"
+                fi
+              done
+            fi
+          done

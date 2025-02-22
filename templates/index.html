@@ -17,34 +17,11 @@
         <a href="https://docs.techtonique.net/">https://docs.techtonique.net/</a>.
     </p>
 
-    <h3>Installation Instructions</h3>
+    <h2>Installation Instructions</h2>
     <div class="section"></div>
     <p>To install R packages from <a href="https://github.com/Techtonique" target="_blank">Techtonique's R package repository</a>, use one of these methods:</p>
 
-    <h4>Method 1: Direct Installation (Recommended)</h4>
-    <pre>
-        <code>
-            install.packages("package_name", repos = "https://r-packages.techtonique.net")
-        </code>
-    </pre>
-
-    <h4>Method 2: Source Installation</h4>
-    <pre>
-        <code>
-            # If Method 1 fails, you can install from source:
-
-            install.packages("package_name", repos = "https://r-packages.techtonique.net", type = "source")
-        </code>
-    </pre>
-
-    <p><strong>Note about Method 2 (source installation):</strong></p>
-    <ul>
-        <li><strong>Linux:</strong> Source installation typically works out of the box (requires build-essential/development tools)</li>
-        <li><strong>macOS:</strong> Requires Xcode Command Line Tools (<code>xcode-select --install</code>)</li>
-        <li><strong>Windows:</strong> Requires Rtools (<a href="https://cran.r-project.org/bin/windows/Rtools/" target="_blank">download here</a>)</li>
-    </ul>
-    </div>
-    <h3>Another way (use <code>options</code> only once)</h3>
+    <h3>Method 1: use <code>options</code> only once (preferred)</h3>
     <div class="section">
         <pre>
             <code>
@@ -62,7 +39,31 @@
         </pre>
     </div>
 
-    <h3>Third way: from GitHub (development version)</h3>
+    <h3>Method 2: Direct Installation</h3>
+    <pre>
+        <code>
+            install.packages("package_name", repos = "https://r-packages.techtonique.net")
+        </code>
+    </pre>
+
+    <h3>Method 3: Source Installation</h3>
+    <pre>
+        <code>
+            # If Method 1 fails, you can install from source:
+
+            install.packages("package_name", repos = "https://r-packages.techtonique.net", type = "source")
+        </code>
+    </pre>
+
+    <p><strong>Note about Method 2 (source installation):</strong></p>
+    <ul>
+        <li><strong>Linux:</strong> Source installation typically works out of the box (requires build-essential/development tools)</li>
+        <li><strong>macOS:</strong> Requires Xcode Command Line Tools (<code>xcode-select --install</code>)</li>
+        <li><strong>Windows:</strong> Requires Rtools (<a href="https://cran.r-project.org/bin/windows/Rtools/" target="_blank">download here</a>)</li>
+    </ul>
+    </div>
+
+    <h3>Method 4: from GitHub (development version)</h3>
     <div class="section">
         <p>If you want to install the development version of a package, you can clone the repository and install it from the local directory:</p>
         <pre>
@@ -72,7 +73,7 @@
         </pre>
     </div>
 
-    <h3>Resources</h3>
+    <h2>Resources</h2>
     <div class="section">
         <ul>
             <li><a href="/packages">View available packages</a> - List of all packages and their status</li>
