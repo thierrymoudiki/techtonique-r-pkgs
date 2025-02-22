@@ -437,7 +437,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: r-packages-${{ matrix.os }}
+          name: r-packages-${{ matrix.os }}-${{ matrix.r-version }}
           path: r-packages
 
   finalize:
