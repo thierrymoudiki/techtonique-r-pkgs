@@ -714,8 +714,25 @@ jobs:
               latest_version=$(ls ${base_name}_* | sort -V | tail -n1)
               for old_version in ${base_name}_*; do
                 if [ "$old_version" != "$latest_version" ]; then
+                  echo "Removing old version: $old_version"
                   rm "$old_version"
                 fi
               done
             fi
+          done
+          
+          # Do the same for 4.2 and 4.4 directories
+          for r_version in "4.2" "4.4"; do
+            for pkg in */contrib/${r_version}/*; do
+              if [ -f "$pkg" ]; then
+                base_name=$(echo "$pkg" | sed -E 's/(.*)_[0-9]+\.[0-9]+\.[0-9]+\..*/\1/')
+                latest_version=$(ls ${base_name}_* | sort -V | tail -n1)
+                for old_version in ${base_name}_*; do
+                  if [ "$old_version" != "$latest_version" ]; then
+                    echo "Removing old version: $old_version"
+                    rm "$old_version"
+                  fi
+                done
+              fi
+            done
           done
