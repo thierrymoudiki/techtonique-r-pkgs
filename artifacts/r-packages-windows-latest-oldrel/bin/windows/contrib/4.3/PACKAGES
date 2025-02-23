@@ -45,7 +45,7 @@ Imports: httr, jsonlite
 License: MIT
 
 Package: learningmachine
-Version: 2.8.0
+Version: 2.7.2
 Depends: randtoolbox, tseries, memoise, foreach, skimr, snow, doSNOW,
         ranger, glmnet, xgboost, e1071, MASS, caret
 Imports: Rcpp (>= 1.0.10), R6
@@ -69,8 +69,5 @@ Imports: reticulate
 Suggests: roxygen2, reticulate
 
 Package: simulatetimeseries
-Version: 1.0
-Imports: Rcpp (>= 1.0.12)
-LinkingTo: Rcpp
-License: GPL (>= 2)
-Archs: x64
+Version: 0.2.0
+License: MIT

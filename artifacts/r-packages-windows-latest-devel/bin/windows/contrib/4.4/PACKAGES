@@ -45,7 +45,7 @@ Imports: httr, jsonlite
 License: MIT
 
 Package: learningmachine
-Version: 2.7.2
+Version: 2.8.0
 Depends: randtoolbox, tseries, memoise, foreach, skimr, snow, doSNOW,
         ranger, glmnet, xgboost, e1071, MASS, caret
 Imports: Rcpp (>= 1.0.10), R6
