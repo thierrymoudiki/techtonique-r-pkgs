@@ -563,7 +563,7 @@ jobs:
                     package <- pkg_info[i, "Package"]
                     version <- pkg_info[i, "Version"]
                     tracking_url <- sprintf(
-                      "https://techtonique-r-packages-079db1913d27.herokuapp.com/download/%s?version=%s&platform=%s",
+                      "https://r-packages.techtonique.net/download/%s?version=%s&platform=%s",
                       package, version, platform
                     )
                     
