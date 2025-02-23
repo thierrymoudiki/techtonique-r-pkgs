@@ -453,6 +453,20 @@ jobs:
         with:
           r-version: 'release'
       
+      # Clean existing r-packages directory
+      - name: Clean existing packages
+        run: |
+          echo "Cleaning existing r-packages directory..."
+          rm -rf r-packages
+          mkdir -p r-packages
+      
+      # Clean and prepare artifacts directory
+      - name: Clean artifacts directory
+        run: |
+          echo "Cleaning artifacts directory..."
+          rm -rf artifacts
+          mkdir -p artifacts
+          
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -462,261 +476,20 @@ jobs:
         run: |
           mkdir -p r-packages
           
-          # Function to extract version from filename
-          get_version() {
-            local file="$1"
-            echo "$file" | sed -E 's/.*_([0-9]+\.[0-9]+\.[0-9]+[^/]*)\.(tar\.gz|tgz|zip)$/\1/'
-          }
-          
-          # Function to compare versions
-          version_gt() {
-            test "$(printf '%s\n' "$1" "$2" | sort -V | tail -n 1)" = "$1"
-          }
-          
-          # Create temporary directory for processing
-          mkdir -p temp_process
-          
           echo "Processing source packages..."
-          cp -rv artifacts/r-packages-source/* temp_process/
+          cp -rv artifacts/r-packages-source/* r-packages/
           
           echo "Processing binary packages..."
           for artifact in artifacts/r-packages-*; do
             if [ "$artifact" != "artifacts/r-packages-source" ]; then
               echo "Processing $artifact..."
-              cp -rv $artifact/* temp_process/
+              cp -rv $artifact/* r-packages/
             fi
           done
           
-          # Process each platform directory separately
-          process_directory() {
-            local dir="$1"
-            local pkg_pattern="$2"
-            
-            if [ ! -d "$dir" ]; then
-              return
-            fi
-            
-            echo "Processing directory: $dir"
-            cd "$dir"
-            
-            # Group files by package name
-            declare -A latest_versions
-            declare -A latest_files
-            
-            for file in *$pkg_pattern; do
-              if [ ! -f "$file" ]; then
-                continue
-              fi
-              
-              # Extract package name and version
-              pkg_name=$(echo "$file" | sed -E 's/(.*)_[0-9]+\.[0-9]+\.[0-9]+[^/]*/\1/')
-              version=$(get_version "$file")
-              
-              if [ -z "${latest_versions[$pkg_name]}" ] || version_gt "$version" "${latest_versions[$pkg_name]}"; then
-                latest_versions[$pkg_name]="$version"
-                latest_files[$pkg_name]="$file"
-              fi
-            done
-            
-            # Create final directory structure
-            mkdir -p "../../r-packages/$(basename $(dirname $(dirname $dir)))/$(basename $(dirname $dir))/$(basename $dir)"
-            target_dir="../../r-packages/$(basename $(dirname $(dirname $dir)))/$(basename $(dirname $dir))/$(basename $dir)"
-            
-            # Copy only the latest versions
-            for pkg_name in "${!latest_files[@]}"; do
-              echo "Copying latest version of $pkg_name: ${latest_files[$pkg_name]}"
-              cp "${latest_files[$pkg_name]}" "$target_dir/"
-            done
-            
-            cd - > /dev/null
-          }
-          
-          # Process each type of package
-          find temp_process -type d -name "contrib" | while read dir; do
-            if [[ "$dir" == */src/contrib ]]; then
-              process_directory "$dir" ".tar.gz"
-            elif [[ "$dir" == */windows/contrib/* ]]; then
-              process_directory "$dir" ".zip"
-            elif [[ "$dir" == */macosx/contrib/* ]]; then
-              process_directory "$dir" ".tgz"
-            fi
-          done
-          
-          # Clean up
-          rm -rf temp_process
-          
-          # Verify final structure
-          echo "Final repository structure:"
-          find r-packages -type f
-          
-          # Modify PACKAGES for tracking
-          Rscript -e '
-          tryCatch({
-            # Helper function to find existing R version directories
-            find_r_version_dirs <- function(base_dir, platform) {
-              if (!dir.exists(base_dir)) return(character(0))
-              dirs <- list.dirs(base_dir, recursive = FALSE)
-              # Return version directories that contain PACKAGES files
-              dirs[file.exists(file.path(dirs, "PACKAGES"))]
-            }
-
-            modify_packages <- function(pkg_dir, platform="source", r_version=getRversion()) {
-              result <- list(
-                platform = platform,
-                path = pkg_dir,
-                status = "SKIPPED",
-                message = NULL,
-                modified = 0
-              )
-              
-              # Check directory exists
-              if (!dir.exists(dirname(pkg_dir))) {
-                result$message <- paste("Parent directory not found:", dirname(pkg_dir))
-                return(result)
-              }
-              
-              packages_file <- file.path(pkg_dir, "PACKAGES")
-              if (!file.exists(packages_file)) {
-                result$message <- paste("PACKAGES file not found in:", pkg_dir)
-                return(result)
-              }
-              
-              tryCatch({
-                content <- readLines(packages_file)
-                if (length(content) == 0) {
-                  result$message <- "PACKAGES file is empty"
-                  return(result)
-                }
-                
-                pkg_info <- read.dcf(textConnection(paste(content, collapse="\n")))
-                if (is.null(pkg_info) || nrow(pkg_info) == 0) {
-                  result$message <- "No package entries found in PACKAGES file"
-                  return(result)
-                }
-                
-                # Check for required columns
-                required_cols <- c("Package", "Version", "File")
-                missing_cols <- required_cols[!required_cols %in% colnames(pkg_info)]
-                if (length(missing_cols) > 0) {
-                  result$message <- paste("Missing required columns:", paste(missing_cols, collapse=", "))
-                  return(result)
-                }
-                
-                message("Processing ", nrow(pkg_info), " packages in ", pkg_dir)
-                modified_count <- 0
-                
-                for (i in seq_len(nrow(pkg_info))) {
-                  if (!is.na(pkg_info[i, "Package"]) && !is.na(pkg_info[i, "Version"]) && !is.na(pkg_info[i, "File"])) {
-                    package <- pkg_info[i, "Package"]
-                    version <- pkg_info[i, "Version"]
-                    tracking_url <- sprintf(
-                      "https://r-packages.techtonique.net/download/%s?version=%s&platform=%s",
-                      package, version, platform
-                    )
-                    
-                    # Add build options based on platform
-                    build_opts <- "--no-build-vignettes --no-manual"
-                    if (platform == "windows") {
-                      build_opts <- paste(build_opts, "--no-multiarch")
-                    }
-                    
-                    # Update the build command in the File field
-                    content <- gsub(
-                      paste0("^(File: )", pkg_info[i, "File"]),
-                      paste0("\\1", tracking_url, " ", build_opts),
-                      content
-                    )
-                    
-                    modified_count <- modified_count + 1
-                    message("Updated URL for ", package, " ", version)
-                  } else {
-                    message("Skipping incomplete entry at row ", i)
-                  }
-                }
-                
-                if (modified_count > 0) {
-                  writeLines(content, packages_file)
-                  result$status <- "SUCCESS"
-                  result$modified <- modified_count
-                  result$message <- paste("Modified", modified_count, "package entries")
-                } else {
-                  result$message <- "No valid package entries to modify"
-                }
-                
-              }, error = function(e) {
-                result$status <- "ERROR"
-                result$message <- conditionMessage(e)
-              })
-              
-              return(result)
-            }
-            
-            # Find actual R version directories
-            message("\nScanning repository structure:")
-            src_dir <- "r-packages/src/contrib"
-            win_base <- "r-packages/bin/windows/contrib"
-            mac_base <- "r-packages/bin/macosx/contrib"
-            
-            message("Repository contents:")
-            if (dir.exists("r-packages")) {
-              system("ls -R r-packages")
-            } else {
-              message("r-packages directory not found")
-            }
-            
-            # Process source packages
-            source_result <- modify_packages(src_dir, "source")
-            
-            # Find and process binary packages
-            win_dirs <- find_r_version_dirs(win_base, "windows")
-            mac_dirs <- find_r_version_dirs(mac_base, "macos")
-            
-            results <- list(source = source_result)
-            
-            # Process Windows versions
-            if (length(win_dirs) > 0) {
-              for (dir in win_dirs) {
-                ver <- basename(dir)
-                results[[paste0("windows_", ver)]] <- modify_packages(dir, "windows", ver)
-              }
-            }
-            
-            # Process macOS versions
-            if (length(mac_dirs) > 0) {
-              for (dir in mac_dirs) {
-                ver <- basename(dir)
-                results[[paste0("macos_", ver)]] <- modify_packages(dir, "macos", ver)
-              }
-            }
-            
-            message("\nModification results:")
-            for (platform in names(results)) {
-              r <- results[[platform]]
-              message(sprintf(
-                "%s (%s): %s - %s",
-                platform,
-                r$path,
-                r$status,
-                if (!is.null(r$message)) r$message else "No message"
-              ))
-            }
-            
-            # Consider it a success if source packages exist and were processed
-            if (!dir.exists(src_dir)) {
-              stop("Source package directory not found")
-            }
-            if (source_result$status == "SKIPPED" && grepl("not found", source_result$message)) {
-              stop("No PACKAGES file found in source directory")
-            }
-            if (source_result$status == "ERROR") {
-              stop(paste("Error processing source packages:", source_result$message))
-            }
-            
-          }, error = function(e) {
-            message("Error occurred: ", conditionMessage(e))
-            quit(status = 1)
-          })'
-        shell: bash
+          # List all package files for debugging
+          echo "All package files after merge:"
+          find r-packages -type f -name "ahead_*"
 
       - name: Commit and push changes
         run: |
