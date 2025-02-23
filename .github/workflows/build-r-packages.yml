@@ -525,14 +525,14 @@ jobs:
           message("\nChecking for Rtools:")
           print(pkgbuild::find_rtools())
 
-      - name: Clean up old versions
+      - name: Clean up repository structure
         run: |
           # Function to clean directory
           clean_directory() {
             local dir="$1"
             if [ ! -d "$dir" ]; then
               return
-            }
+            fi
             
             cd "$dir"
             for pkg in *.{tgz,zip,tar.gz}; do
@@ -552,7 +552,7 @@ jobs:
             done
             cd - > /dev/null
           }
-
+          
           # Clean each platform directory
           for platform in "src/contrib" "bin/macosx/contrib/"* "bin/windows/contrib/"*; do
             if [ -d "$platform" ]; then
@@ -560,7 +560,7 @@ jobs:
               clean_directory "$platform"
             fi
           done
-
+          
           # Rebuild PACKAGES files
           Rscript -e '
           for (dir in list.dirs(".", recursive = FALSE)) {
