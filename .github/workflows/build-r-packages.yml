@@ -525,56 +525,71 @@ jobs:
           message("\nChecking for Rtools:")
           print(pkgbuild::find_rtools())
 
-      - name: Clean up repository structure
+      - name: Clean up repository
         run: |
-          # Function to clean directory
-          clean_directory() {
+          # Function to clean a specific directory
+          clean_packages() {
             local dir="$1"
-            if [ ! -d "$dir" ]; then
-              return
-            fi
+            echo "Cleaning directory: $dir"
             
-            cd "$dir"
-            for pkg in *.{tgz,zip,tar.gz}; do
-              if [ -f "$pkg" ]; then
-                # Extract base package name
-                base_name=$(echo "$pkg" | sed -E 's/(.*)_[0-9]+\.[0-9]+\.[0-9]+[^/]*/\1/')
-                # Find latest version for this package
-                latest_version=$(ls ${base_name}_* 2>/dev/null | sort -V | tail -n1)
-                # Remove older versions
-                for old_version in ${base_name}_*; do
-                  if [ -f "$old_version" ] && [ "$old_version" != "$latest_version" ]; then
-                    echo "Removing old version: $old_version"
-                    rm "$old_version"
-                  fi
-                done
+            # Get all unique package base names
+            declare -A latest_versions
+            declare -A latest_files
+            
+            # Process all package files
+            for file in "$dir"/*.[tz][giz][zgp]; do
+              if [ ! -f "$file" ]; then continue; fi
+              
+              # Get package name and version
+              base_name=$(basename "$file" | sed -E 's/(.*)_[0-9]+\.[0-9]+\.[0-9]+.*/\1/')
+              version=$(basename "$file" | sed -E 's/.*_([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+              
+              # Update if this is the latest version
+              if [ -z "${latest_versions[$base_name]}" ] || \
+                 [ "$(printf '%s\n' "${latest_versions[$base_name]}" "$version" | sort -V | tail -n1)" = "$version" ]; then
+                latest_versions[$base_name]="$version"
+                latest_files[$base_name]="$file"
               fi
             done
-            cd - > /dev/null
+            
+            # Remove older versions
+            for file in "$dir"/*.[tz][giz][zgp]; do
+              if [ ! -f "$file" ]; then continue; fi
+              
+              base_name=$(basename "$file" | sed -E 's/(.*)_[0-9]+\.[0-9]+\.[0-9]+.*/\1/')
+              if [ "$file" != "${latest_files[$base_name]}" ]; then
+                echo "Removing old version: $file"
+                rm "$file"
+              fi
+            done
+            
+            # Rebuild PACKAGES files
+            if [[ "$dir" == */macosx/* ]]; then
+              Rscript -e "tools::write_PACKAGES('$dir', type='mac.binary')"
+            elif [[ "$dir" == */windows/* ]]; then
+              Rscript -e "tools::write_PACKAGES('$dir', type='win.binary')"
+            else
+              Rscript -e "tools::write_PACKAGES('$dir', type='source')"
+            fi
           }
           
-          # Clean each platform directory
-          for platform in "src/contrib" "bin/macosx/contrib/"* "bin/windows/contrib/"*; do
-            if [ -d "$platform" ]; then
-              echo "Cleaning directory: $platform"
-              clean_directory "$platform"
+          # Clean source packages
+          clean_packages "src/contrib"
+          
+          # Clean Mac packages for each R version
+          for ver_dir in bin/macosx/contrib/[0-9].*; do
+            if [ -d "$ver_dir" ]; then
+              clean_packages "$ver_dir"
             fi
           done
           
-          # Rebuild PACKAGES files
-          Rscript -e '
-          for (dir in list.dirs(".", recursive = FALSE)) {
-            if (dir.exists(file.path(dir, "src/contrib"))) {
-              tools::write_PACKAGES(file.path(dir, "src/contrib"), type="source")
-            }
-            if (dir.exists(file.path(dir, "bin/windows/contrib"))) {
-              for (rver in list.dirs(file.path(dir, "bin/windows/contrib"), recursive=FALSE)) {
-                tools::write_PACKAGES(rver, type="win.binary")
-              }
-            }
-            if (dir.exists(file.path(dir, "bin/macosx/contrib"))) {
-              for (rver in list.dirs(file.path(dir, "bin/macosx/contrib"), recursive=FALSE)) {
-                tools::write_PACKAGES(rver, type="mac.binary")
-              }
-            }
-          }'
+          # Clean Windows packages for each R version
+          for ver_dir in bin/windows/contrib/[0-9].*; do
+            if [ -d "$ver_dir" ]; then
+              clean_packages "$ver_dir"
+            fi
+          done
+          
+          # Also clean the root contrib directories
+          clean_packages "bin/macosx/contrib"
+          clean_packages "bin/windows/contrib"
