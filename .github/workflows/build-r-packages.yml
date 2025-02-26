@@ -24,19 +24,21 @@ jobs:
       
       # Add verbose cleanup and verification
       - name: Clean workspace
+        shell: pwsh
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Initial contents:"
-          ls -la
+          Write-Host "Current directory: $PWD"
+          Write-Host "Initial contents:"
+          Get-ChildItem -Force
           
-          echo "Cleaning workspace..."
-          rm -rf r-packages artifacts
-          mkdir -p r-packages/src/contrib
+          Write-Host "Cleaning workspace..."
+          Remove-Item -Path "r-packages" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "artifacts" -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -Path "r-packages/${{ matrix.path }}" -ItemType Directory -Force
           
-          echo "After cleanup:"
-          ls -la
-          echo "r-packages contents:"
-          find r-packages -type f
+          Write-Host "After cleanup:"
+          Get-ChildItem -Force
+          Write-Host "r-packages contents:"
+          Get-ChildItem -Path "r-packages" -Recurse -File | Select-Object FullName
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -265,19 +267,21 @@ jobs:
       
       # Add verbose cleanup and verification
       - name: Clean workspace
+        shell: pwsh
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Initial contents:"
-          ls -la
+          Write-Host "Current directory: $PWD"
+          Write-Host "Initial contents:"
+          Get-ChildItem -Force
           
-          echo "Cleaning workspace..."
-          rm -rf r-packages artifacts
-          mkdir -p "r-packages/${{ matrix.path }}"
+          Write-Host "Cleaning workspace..."
+          Remove-Item -Path "r-packages" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "artifacts" -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -Path "r-packages/${{ matrix.path }}" -ItemType Directory -Force
           
-          echo "After cleanup:"
-          ls -la
-          echo "r-packages contents:"
-          find r-packages -type f
+          Write-Host "After cleanup:"
+          Get-ChildItem -Force
+          Write-Host "r-packages contents:"
+          Get-ChildItem -Path "r-packages" -Recurse -File | Select-Object FullName
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
