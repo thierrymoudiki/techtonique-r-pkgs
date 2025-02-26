@@ -71,3 +71,9 @@ Suggests: roxygen2, reticulate
 Package: simulatetimeseries
 Version: 0.2.0
 License: MIT
+
+Package: tisthemachinelearner
+Version: 0.3.1
+Imports: R6, reticulate, methods
+Suggests: MASS
+License: MIT
