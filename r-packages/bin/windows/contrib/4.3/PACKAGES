@@ -73,7 +73,7 @@ Version: 0.2.0
 License: MIT
 
 Package: tisthemachinelearner
-Version: 0.3.1
+Version: 0.3.3
 Imports: R6, reticulate, methods
-Suggests: MASS
+Suggests: MASS, knitr
 License: MIT
