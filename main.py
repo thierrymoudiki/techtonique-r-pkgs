@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, Column, Integer, String, Date, desc, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from config import DOC_URLS
 
 # Load environment variables from .env file
 load_dotenv()
@@ -465,7 +466,8 @@ async def get_downloads(request: Request, db: Session = Depends(get_db)):
             {
                 "request": request,
                 "downloads_by_month": downloads_by_month,
-                "year": datetime.now().year
+                "year": datetime.now().year,
+                "docs_urls": DOC_URLS
             }
         )
     except Exception as e:

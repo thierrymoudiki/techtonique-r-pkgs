@@ -16,7 +16,7 @@
             <tbody>
                 {% for package, stats in packages.items() %}
                 <tr>
-                    <td>{{ package }}</td>
+                    <td><a href="{{ docs_urls[package] }}">{{ package }}</a></td>
                     <td>{{ stats.total }}</td>
                     <td>
                         {% for platform, count in stats.platforms.items() %}
