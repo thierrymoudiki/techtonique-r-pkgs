@@ -230,11 +230,6 @@ jobs:
             r-version: 'release'
             path: bin/windows/contrib/4.3
             continue-on-error: false
-          - os: macos-latest
-            platform: mac.binary
-            r-version: 'release'
-            path: bin/macosx/contrib/4.3
-            continue-on-error: false
             
           # Previous release
           - os: windows-latest
@@ -242,22 +237,12 @@ jobs:
             r-version: 'oldrel'
             path: bin/windows/contrib/4.2
             continue-on-error: false
-          - os: macos-latest
-            platform: mac.binary
-            r-version: 'oldrel'
-            path: bin/macosx/contrib/4.2
-            continue-on-error: false
             
           # Development version - allowed to fail
           - os: windows-latest
             platform: win.binary
             r-version: 'devel'
             path: bin/windows/contrib/4.4
-            continue-on-error: true
-          - os: macos-latest
-            platform: mac.binary
-            r-version: 'devel'
-            path: bin/macosx/contrib/4.4
             continue-on-error: true
 
     runs-on: ${{ matrix.os }}
