@@ -46,5 +46,9 @@
     {
         "package": "tisthemachinelearner", 
         "url": "https://github.com/Techtonique/tisthemachinelearner_r"
+    },
+    {
+        "package": "matern32", 
+        "url": "https://github.com/thierrymoudiki/matern32"
     }
 ]
