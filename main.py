@@ -72,7 +72,6 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
     try:
         packages = {}
         r_packages_dir = Path("r-packages")
-        
         # Get latest version for each package from r-packages/src/contrib
         src_contrib = r_packages_dir / "src" / "contrib"
         if src_contrib.exists():
@@ -90,7 +89,6 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
                             }
                         }
                     }
-
         # Check Windows binaries for all R versions
         for r_version in ["4.2", "4.3", "4.4"]:
             win_dir = r_packages_dir / "bin" / "windows" / "contrib" / r_version
@@ -103,20 +101,6 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
                             "build_time": datetime.fromtimestamp(zip_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
                             "r_version": r_version
                         }
-
-        # Check macOS binaries for all R versions
-        for r_version in ["4.2", "4.3", "4.4"]:
-            mac_dir = r_packages_dir / "bin" / "macosx" / "contrib" / r_version
-            if mac_dir.exists():
-                for tgz_file in mac_dir.glob("*.tgz"):
-                    package_name = tgz_file.name.split("_")[0]
-                    if package_name in packages:
-                        packages[package_name]["platforms"]["macos"] = {
-                            "status": "SUCCESS",
-                            "build_time": datetime.fromtimestamp(tgz_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                            "r_version": r_version
-                        }
-
         # Read build status files to get list of all packages that should exist
         for json_file in r_packages_dir.glob("build_status_*.json"):
             with open(json_file) as f:
