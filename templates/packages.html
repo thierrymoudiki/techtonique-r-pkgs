@@ -4,13 +4,14 @@
 <div id="container">
     <h2> <a href="https://github.com/Techtonique">Techtonique</a>'s available packages</h2>
     <p>
-        If the package is not available for a platform, you can still try to install from source.
+        If the package is not available for a platform (note that <code>source</code> = Linux or macOS), you can still try to install from source.
         See <a href="/">homepage</a> for more details.
     </p>
     <table class="table">
         <thead>
             <tr>
                 <th>Package</th>
+                <th>Description</th>
                 <th>Platform</th>
                 <th>Status</th>
                 <th>Build Time</th>
@@ -18,12 +19,13 @@
         </thead>
         <tbody>
             {% for package_name, package in packages|dictsort %}
-                {% for platform in ['source', 'windows', 'macos'] %}
+                {% for platform in ['source', 'windows'] %}
                 <tr>
                     {% if loop.first %}
-                    <td rowspan="3">
+                    <td rowspan="2">
                         <a href="/download/source/{{ package_name }}?version={{ package.version }}">{{ package_name }}</a>
                     </td>
+                    <td rowspan="2">{{ package.description.lower() }}</td>
                     {% endif %}
                     <td>{{ platform }}</td>
                     <td class="{% if platform in package.platforms %}status-success{% else %}status-failed{% endif %}">
@@ -47,6 +49,17 @@
 }
 .status-failed {
     color: red;
+}
+/* Adjust column widths */
+table {
+    table-layout: auto; /* Allow columns to adjust dynamically */
+    width: 100%; /* Use the full width of the container */
+}
+table th:nth-child(2), /* Description column header */
+table td:nth-child(2) { /* Description column cells */
+    width: 50%; /* Allocate more space to the description column */
+    word-wrap: break-word; /* Ensure long text wraps within the cell */
+    white-space: normal; /* Allow text to wrap to the next line */
 }
 </style>
 {% endblock %} 

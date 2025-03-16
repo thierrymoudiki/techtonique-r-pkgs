@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, Column, Integer, String, Date, desc, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from config import DOC_URLS
+from config import DOC_URLS, PKGS_DESC
 
 # Load environment variables from .env file
 load_dotenv()
@@ -81,6 +81,7 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
                 if package_name not in packages:
                     packages[package_name] = {
                         "package": package_name,
+                        "description": PKGS_DESC.get(package_name, ""),
                         "version": version,
                         "platforms": {
                             "source": {
@@ -112,11 +113,12 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
                         if pkg_name not in packages:
                             packages[pkg_name] = {
                                 "package": pkg_name,
+                                "description": PKGS_DESC.get(pkg_name, ""),
                                 "version": "",
                                 "platforms": {}
                             }
                         packages[pkg_name]["platforms"][platform] = {
-                            "status": "FAILED",  # No file exists, so it failed
+                            "status": "FAILED",  # No file exists, so it failed                            
                             "build_time": pkg_info.get("build_time", ""),
                             "error_message": "No package file found"
                         }
@@ -139,7 +141,7 @@ async def get_index(request: Request, db: Session = Depends(get_db)):
 async def download_package(
     package: str, 
     version: str = Query(..., description="R package version"),
-    platform: str = Query(default="source", description="Platform (windows/macos/source)"),
+    platform: str = Query(default="source", description="Platform (windows/source)"),
     r_version: str = Query(default="4.3", description="R version (e.g. 4.3)"),
     db: Session = Depends(get_db)
 ):
@@ -179,8 +181,6 @@ async def download_package(
         base_url = "https://r-packages.techtonique.net"  # Using the existing domain
         if platform == "windows":
             package_url = f"{base_url}/bin/windows/contrib/{r_version}/{package}_{version}.zip"
-        elif platform == "macos":
-            package_url = f"{base_url}/bin/macosx/contrib/{package}_{version}.tgz"
         else:  # source
             package_url = f"{base_url}/src/contrib/{package}_{version}.tar.gz"
         
@@ -296,9 +296,6 @@ async def get_today_stats(db: Session = Depends(get_db)):
 @app.get("/bin/windows/contrib/{r_version}/PACKAGES")
 @app.get("/bin/windows/contrib/{r_version}/PACKAGES.gz")
 @app.get("/bin/windows/contrib/{r_version}/PACKAGES.rds")
-@app.get("/bin/macosx/contrib/{r_version}/PACKAGES")
-@app.get("/bin/macosx/contrib/{r_version}/PACKAGES.gz")
-@app.get("/bin/macosx/contrib/{r_version}/PACKAGES.rds")
 async def serve_packages_file(request: Request, r_version: str = None):
     try:
         # Remove the leading slash and add r-packages prefix
@@ -334,7 +331,6 @@ async def serve_packages_file(request: Request, r_version: str = None):
 
 @app.get("/src/contrib/{file_name}")
 @app.get("/bin/windows/contrib/{r_version}/{file_name}")
-@app.get("/bin/macosx/contrib/{r_version}/{file_name}")
 async def serve_package(
     request: Request,
     file_name: str,
@@ -361,8 +357,6 @@ async def serve_package(
         # Determine platform from path
         if "windows" in str(request.url):
             platform = "windows"
-        elif "macosx" in str(request.url):
-            platform = "macos"
         else:
             platform = "source"
 
@@ -473,6 +467,7 @@ async def get_packages(request: Request, db: Session = Depends(get_db)):
                 if package_name not in packages:
                     packages[package_name] = {
                         "package": package_name,
+                        "description": PKGS_DESC.get(package_name, ""),
                         "version": version,
                         "platforms": {
                             "source": {
@@ -495,19 +490,6 @@ async def get_packages(request: Request, db: Session = Depends(get_db)):
                             "r_version": r_version
                         }
 
-        # Check macOS binaries for all R versions
-        for r_version in ["4.2", "4.3", "4.4"]:
-            mac_dir = r_packages_dir / "bin" / "macosx" / "contrib" / r_version
-            if mac_dir.exists():
-                for tgz_file in mac_dir.glob("*.tgz"):
-                    package_name = tgz_file.name.split("_")[0]
-                    if package_name in packages:
-                        packages[package_name]["platforms"]["macos"] = {
-                            "status": "SUCCESS",
-                            "build_time": datetime.fromtimestamp(tgz_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                            "r_version": r_version
-                        }
-
         # Read build status files to get list of all packages that should exist
         for json_file in r_packages_dir.glob("build_status_*.json"):
             with open(json_file) as f:
@@ -519,6 +501,7 @@ async def get_packages(request: Request, db: Session = Depends(get_db)):
                         if pkg_name not in packages:
                             packages[pkg_name] = {
                                 "package": pkg_name,
+                                "description": PKGS_DESC.get(pkg_name, ""),
                                 "version": "",
                                 "platforms": {}
                             }

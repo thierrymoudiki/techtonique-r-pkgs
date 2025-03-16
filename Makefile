@@ -99,7 +99,7 @@ run-tests: ## run all the tests with one command
 	python3 techtonique_tests/test_api.py
 
 run-app: clean ## run the app		
-	pip install -r requirements.txt	
+	uv pip install -r requirements.txt	
 	#black *.py --line-length=80
 	uvicorn main:app --reload
 
