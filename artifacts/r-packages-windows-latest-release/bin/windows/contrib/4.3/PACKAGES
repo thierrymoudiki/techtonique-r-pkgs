@@ -57,9 +57,10 @@ License: BSD_3_clause + file LICENSE
 Archs: x64
 
 Package: matern32
-Version: 0.1.0
-Imports: Rcpp (>= 0.12.17)
+Version: 0.2.0
+Imports: Rcpp (>= 0.12.17), tseries
 LinkingTo: Rcpp
+Suggests: MASS, mda
 Archs: x64
 
 Package: misc
