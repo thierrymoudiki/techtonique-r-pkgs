@@ -6,7 +6,7 @@ Imports: Rcpp (>= 1.0.6), misc, foreach, snow, forecast (>= 8.0),
 LinkingTo: Rcpp
 Suggests: caret, dfoptim, doSNOW, knitr, rmarkdown, testthat,
         ForecastComb, fpp, glmnet, e1071, randomForest, vars, roxygen2
-MD5sum: 42fd838fb1000dfe55856d8780381c7a
+MD5sum: 6b793324866fdcaa9b266c6e995f0691
 NeedsCompilation: yes
 
 Package: bayesianrvfl
@@ -14,7 +14,7 @@ Version: 0.3.1
 Depends: cclust, memoise
 Imports: Rcpp, randtoolbox, foreach, memoise
 LinkingTo: Rcpp
-MD5sum: 333109ea2c59dbe7840c3c7dda4a4427
+MD5sum: ac35fcfb8ad9b665e60a86753d00d928
 NeedsCompilation: yes
 
 Package: bcn
@@ -23,7 +23,7 @@ Depends: R (>= 3.5.0)
 Imports: Rcpp (>= 1.0.7), dfoptim
 LinkingTo: Rcpp
 Suggests: knitr, rmarkdown, randomForest, pROC, MASS
-MD5sum: 6d85271656c189f6852a841899d70282
+MD5sum: aac69ef2d37bd3021204c5dae031be12
 NeedsCompilation: yes
 
 Package: crossvalidation
@@ -32,7 +32,7 @@ Depends: R (>= 3.5.0), doSNOW, foreach, scoringRules
 Suggests: glmnet, testthat, forecast, randomForest, knitr, rmarkdown,
         xgboost
 License: file LICENSE
-MD5sum: cf8be2d48f7d23b916259fc619f62aab
+MD5sum: 9637ecf8999ee602821c87bcb076ad9b
 NeedsCompilation: no
 
 Package: esgtoolkit
@@ -42,14 +42,14 @@ Depends: R (>= 3.5.0), ggplot2, gridExtra, methods, reshape2,
 Imports: Rcpp(>= 0.11.0)
 LinkingTo: Rcpp
 Suggests: devtools, ggplot2, testthat
-MD5sum: 59ff0d57d648486d989837895eb5bf52
+MD5sum: e7472ebd2c214dc680db21e127198144
 NeedsCompilation: yes
 
 Package: forecastingapi
 Version: 0.4.0
 Imports: httr, jsonlite
 License: MIT
-MD5sum: be85c0e8baf4366b74fffd0e4ed88231
+MD5sum: e646c05cf0f758317a9c28354717f9ec
 NeedsCompilation: no
 
 Package: learningmachine
@@ -62,7 +62,7 @@ Suggests: caret, e1071, ggplot2, glmnet, knitr, MASS, mlbench,
         palmerpenguins, pkgbuild, pROC, ranger, reshape2, rmarkdown,
         roxygen2, testthat (>= 3.0.0), xgboost
 License: BSD_3_clause + file LICENSE
-MD5sum: 327f1272b9fd42ed1dd6e179b9d4abae
+MD5sum: cc6603fb3222e7ea4683a93d612c80ec
 NeedsCompilation: yes
 
 Package: matern32
@@ -70,22 +70,23 @@ Version: 0.2.0
 Imports: Rcpp (>= 0.12.17), tseries
 LinkingTo: Rcpp
 Suggests: MASS, mda
-MD5sum: 0ed63d0a9eab71b57f3cfb6ddc794bb6
+MD5sum: 13ddc4d9477dce364ba3ddfd75def3df
 NeedsCompilation: yes
 
 Package: misc
-Version: 0.4.0
+Version: 0.5.1
 Depends: R (>= 3.5.0), MASS, stats, utils, foreach, doSNOW, snow,
         parallel, compiler
+Suggests: ranger
 License: MIT
-MD5sum: ed363a64f87952f03b7f4a66442cfbc9
+MD5sum: 18e8baa705a1e29c767cb70d37ac3885
 NeedsCompilation: no
 
 Package: mlsauce
 Version: 0.22.3
 Imports: memoise, reticulate
 Suggests: Rcpp
-MD5sum: db19b5a956566c68cc520b07779a01c7
+MD5sum: b89d646b868dd05745159af230634c91
 NeedsCompilation: no
 
 Package: nnetsauce
@@ -93,13 +94,13 @@ Version: 0.20.6
 Depends: R (>= 3.3.3), forecast, memoise
 Imports: reticulate
 Suggests: roxygen2, reticulate
-MD5sum: 2666a540ba452c68e75ed36ff3cdb98a
+MD5sum: 0131e4accb33977f7fc4329fef321da8
 NeedsCompilation: no
 
 Package: simulatetimeseries
 Version: 0.2.0
 License: MIT
-MD5sum: d1442055693908077b17de46d794273e
+MD5sum: b9a0a011db51170ccc35c5a233922bd1
 NeedsCompilation: no
 
 Package: tisthemachinelearner
@@ -108,5 +109,5 @@ Depends: reticulate, Matrix
 Imports: R6, Rcpp, RcppProgress
 LinkingTo: Rcpp, RcppProgress
 Suggests: MASS
-MD5sum: e26b7033a13b998ec832f7a4e84c0aa5
+MD5sum: cc74bb884ed8852bc2d805e326a989de
 NeedsCompilation: yes
