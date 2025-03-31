@@ -50,5 +50,9 @@
     {
         "package": "matern32", 
         "url": "https://github.com/thierrymoudiki/matern32"
+    },
+    {
+        "package": "rvfl", 
+        "url": "https://github.com/thierrymoudiki/rvfl"
     }
 ]
